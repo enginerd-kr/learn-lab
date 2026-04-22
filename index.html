@@ -39,7 +39,7 @@
   .slide {
     position: absolute;
     inset: 0;
-    padding: 64px 80px;
+    padding: 64px 80px 120px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -653,6 +653,55 @@ result = chain.invoke({<span class="str">"review"</span>: <span class="str">"연
 <span class="fn">print</span>(result.sentiment, result.keywords)</code></pre>
     </section>
 
+    <!-- Slide: Runnable 인터페이스 -->
+    <section class="slide">
+      <h2>Runnable 인터페이스</h2>
+      <p class="subtitle">한 번 Runnable이 되면 <b>LangChain · LangGraph 전체로 동일한 동작이 전파</b></p>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>🧩 핵심 아이디어</h3>
+          <ul>
+            <li>Prompt · Model · Parser · Tool 은 모두 <b>Runnable</b></li>
+            <li>공통 메서드: <code>invoke</code> / <code>stream</code> / <code>batch</code> (+ async 버전)</li>
+            <li>파이프(<code>|</code>)로 합성해도 결과 역시 Runnable</li>
+            <li>LangGraph는 노드 함수를 내부적으로 <code>RunnableLambda</code>로 감쌈
+              <br><span style="font-size:14px;color:var(--muted);">→ 그래서 그래프 자체에도 <code>invoke/stream/batch</code>가 그대로 열림</span></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🌊 무엇이 전파되나?</h3>
+          <ul>
+            <li><span class="badge green">스트리밍</span> 체인·그래프 어디서든 토큰 단위 <code>.stream()</code></li>
+            <li><span class="badge amber">배치</span> 여러 입력을 <code>.batch()</code>로 병렬 처리</li>
+            <li><span class="badge purple">비동기</span> <code>.ainvoke()</code> / <code>.astream()</code> 자동 지원</li>
+            <li><span class="badge">트레이싱</span> LangSmith 추적·콜백·재시도가 일관 적용</li>
+          </ul>
+        </div>
+      </div>
+
+      <pre style="min-height:300px;"><code><span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> RunnableLambda
+
+<span class="cm"># 1) 평범한 파이썬 함수를 Runnable 로 감싸기</span>
+<span class="kw">def</span> <span class="fn">shout</span>(x: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    <span class="kw">return</span> x.upper() + <span class="str">"!"</span>
+
+shout_r = RunnableLambda(shout)
+
+shout_r.invoke(<span class="str">"hi"</span>)            <span class="cm"># → "HI!"</span>
+shout_r.batch([<span class="str">"hi"</span>, <span class="str">"bye"</span>])    <span class="cm"># → ["HI!", "BYE!"]  ← 병렬 자동</span>
+
+<span class="cm"># 2) 다른 Runnable 과 파이프로 합성 — 동일 규약이 그대로 전파</span>
+chain = prompt | llm | parser | shout_r
+chain.invoke({<span class="str">"review"</span>: <span class="str">"..."</span>})   <span class="cm"># invoke / stream / batch 모두 동작</span>
+
+<span class="cm"># 3) LangGraph 노드로 그대로 꽂아도 동일하게 동작</span>
+builder.add_node(<span class="str">"shout"</span>, shout_r)      <span class="cm"># 함수든 Runnable이든 OK</span>
+graph = builder.compile()
+graph.stream({<span class="str">"review"</span>: <span class="str">"..."</span>})    <span class="cm"># ← 그래프에도 stream 이 전파됨</span></code></pre>
+    </section>
+
     <!-- Slide: LangGraph 섹션 타이틀 -->
     <section class="slide">
       <div class="hero-icon">🕸️</div>
@@ -1076,7 +1125,7 @@ graph.invoke({<span class="str">"question"</span>: <span class="str">"서울 날
       <h2>한 장 요약</h2>
       <p class="subtitle">LangChain(빌딩 블록) → LangGraph(상태 그래프) → Agent(ReAct 루프)</p>
 
-      <div class="cards">
+      <div class="cards" style="grid-template-columns:1fr;">
         <div class="card">
           <h3>🔗 LangChain</h3>
           <ul>
@@ -1130,9 +1179,88 @@ graph.invoke({<span class="str">"question"</span>: <span class="str">"서울 날
         </div>
       </div>
 
-      <p style="text-align:center;margin-top:48px;font-size:32px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent;">
-        감사합니다 🙌
+    </section>
+
+    <!-- Slide: 더 공부해볼 것 -->
+    <section class="slide">
+      <h2>더 공부해볼 것</h2>
+      <p class="subtitle">에이전트를 실전에서 쓰려면 알아두면 좋은 개념들</p>
+
+      <div class="cards" style="grid-template-columns:1fr;">
+        <div class="card">
+          <h3>🪝 Middleware & Hooks</h3>
+          <p style="font-size:15px;color:var(--muted);margin-bottom:8px;">
+            <code>create_agent</code>의 <b>agent loop 각 지점</b>에 로직 삽입.
+          </p>
+          <ul>
+            <li><b>Node-style</b>: <code>before_agent</code> / <code>before_model</code> / <code>after_model</code> / <code>after_agent</code></li>
+            <li><b>Wrap-style</b>: <code>wrap_model_call</code> / <code>wrap_tool_call</code></li>
+            <li>데코레이터(<code>@before_model</code>) 또는 <code>AgentMiddleware</code> 클래스로 정의</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🧰 Built-in Middleware</h3>
+          <ul>
+            <li><code>SummarizationMiddleware</code> — 긴 대화 자동 요약</li>
+            <li><code>HumanInTheLoopMiddleware</code> — 툴 승인·편집·거절</li>
+            <li><code>ModelCallLimit</code> / <code>ToolCallLimit</code> — 루프 폭주 방지</li>
+            <li><code>ModelFallbackMiddleware</code> — 실패 시 백업 모델</li>
+            <li><code>PIIMiddleware</code> — 개인정보 마스킹·차단</li>
+            <li><code>TodoListMiddleware</code>, <code>LLMToolSelectorMiddleware</code> 등</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🧠 Memory · Store</h3>
+          <ul>
+            <li><b>Short-term</b>: <code>Checkpointer</code> 기반 thread 메모리</li>
+            <li><b>Long-term</b>: <code>Store</code> — 사용자/도메인 지식 영속화</li>
+            <li><code>SummarizationMiddleware</code>로 컨텍스트 관리</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🌊 Streaming 모드</h3>
+          <ul>
+            <li><code>values</code> — 매 스텝의 전체 State</li>
+            <li><code>updates</code> — 노드가 반환한 변경분만</li>
+            <li><code>messages</code> — 토큰 단위 LLM 스트림</li>
+            <li><code>custom</code> — <code>get_stream_writer</code>로 임의 이벤트</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🧵 Subgraph · Multi-agent</h3>
+          <ul>
+            <li>그래프를 다른 그래프의 <b>노드</b>로 중첩</li>
+            <li>Supervisor / Swarm / Handoff 패턴</li>
+            <li><code>prebuilt</code>: <code>create_supervisor</code>, <code>create_swarm</code></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🧪 Observability · 평가</h3>
+          <ul>
+            <li><b>LangSmith</b> — 트레이싱·데이터셋·평가</li>
+            <li>Eval: 골든셋 + LLM-as-judge</li>
+            <li>프로덕션 배포: <b>LangGraph Platform</b></li>
+          </ul>
+        </div>
+      </div>
+
+      <p style="font-size:15px;color:var(--muted);margin-top:16px;text-align:center;">
+        참고: <code>langchain.agents.middleware</code> / <code>langgraph.store</code> / LangSmith 공식 문서
       </p>
+    </section>
+
+    <!-- Slide: 감사합니다 -->
+    <section class="slide" style="justify-content:center;align-items:center;text-align:center;">
+      <div class="hero-icon" style="font-size:100px;">🙌</div>
+      <p style="font-size:56px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:20px;">
+        감사합니다
+      </p>
+      <p class="subtitle" style="margin-bottom:0;">질문·피드백 환영합니다 💬</p>
     </section>
 
   </div>
