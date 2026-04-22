@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LangGraph 개념 소개</title>
+<title>LangChain &amp; LangGraph 패스트트랙</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -301,6 +301,7 @@
     position: fixed;
     top: 24px;
     right: 28px;
+    z-index: 100;
     color: var(--muted);
     font-size: 13px;
     background: rgba(30, 41, 59, 0.7);
@@ -365,8 +366,8 @@
     <!-- Slide 1: Title -->
     <section class="slide active">
       <div class="hero-icon">🕸️</div>
-      <h1>LangGraph 개념 소개</h1>
-      <p class="subtitle">상태 기반 멀티 에이전트 워크플로우를 위한 그래프 프레임워크</p>
+      <h1>LangChain<br>LangGraph<br><span style="background:linear-gradient(135deg,#fbbf24,#f472b6,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;">패스트트랙</span></h1>
+      <p class="subtitle">LangChain 빌딩 블록부터 LangGraph 상태 그래프, Agent까지 한 번에</p>
       <div class="tag-list">
         <span class="tag">#LangChain</span>
         <span class="tag">#LangGraph</span>
@@ -1030,7 +1031,7 @@ graph.invoke(input={<span class="str">"messages"</span>: [{<span class="str">"ro
         </div>
       </div>
 
-      <pre style="min-height:400px;"><code><span class="cm"># LangChain v1 — create_react_agent 는 deprecated</span>
+      <pre style="min-height:400px;"><code><span class="cm"># 모델 + 툴 + 프롬프트 + 체크포인트 + HITL 미들웨어</span>
 <span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
 <span class="kw">from</span> langchain.agents.middleware <span class="kw">import</span> HumanInTheLoopMiddleware
 <span class="kw">from</span> langchain.tools <span class="kw">import</span> tool
@@ -1068,7 +1069,7 @@ result = agent.invoke(
     <!-- Slide: 그래프 안의 에이전트 -->
     <section class="slide">
       <h2>그래프 안에서 Agent 호출하기</h2>
-      <p class="subtitle"><code>create_react_agent</code> 결과는 일반 Runnable — <b>노드 하나</b>로 꽂을 수 있음</p>
+      <p class="subtitle"><code>create_agent</code> 결과는 일반 Runnable — <b>노드 하나</b>로 꽂을 수 있음</p>
 
       <div class="diagram">
         <div class="node start">START</div>
@@ -1174,7 +1175,7 @@ graph.invoke({<span class="str">"question"</span>: <span class="str">"서울 날
           <ul>
             <li>LangChain: Prompts / Output Parsers / Structured Output</li>
             <li>LangGraph: Concepts / Human-in-the-loop / Persistence</li>
-            <li>Prebuilt: <code>create_react_agent</code> 가이드</li>
+            <li>LangChain v1: <code>create_agent</code> + Middleware 가이드</li>
           </ul>
         </div>
       </div>
