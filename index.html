@@ -395,7 +395,7 @@
           </ul>
           <pre><code><span class="cm"># 전형적인 단방향 체인</span>
 chain = prompt | model | parser
-chain.invoke({<span class="str">"q"</span>: <span class="str">"..."</span>})</code></pre>
+chain.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"hi"</span>)]})</code></pre>
         </div>
 
         <div class="card">
@@ -473,7 +473,10 @@ builder = StateGraph(State)
 builder.add_node(<span class="str">"agent"</span>, agent)
 builder.add_edge(START, <span class="str">"agent"</span>)
 builder.add_edge(<span class="str">"agent"</span>, END)
-graph = builder.compile()</code></pre>
+graph = builder.compile()
+
+<span class="cm"># 채팅 메시지 인터페이스로 호출</span>
+graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"hi"</span>)]})</code></pre>
     </section>
 
     <!-- Slide 4: Interrupt -->
@@ -521,10 +524,13 @@ graph = builder.compile()</code></pre>
     <span class="kw">return</span> {<span class="str">"approved"</span>: answer == <span class="str">"yes"</span>}
 
 <span class="cm"># 1) 일단 실행 → interrupt 에서 멈춤</span>
-graph.invoke({<span class="str">"messages"</span>: [...]}, config=cfg)
+graph.invoke(
+    input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"파일 삭제해줘"</span>)]},
+    config=cfg,
+)
 
 <span class="cm"># 2) 사람이 확인한 값을 주입해 재개</span>
-graph.invoke(Command(resume=<span class="str">"yes"</span>), config=cfg)</code></pre>
+graph.invoke(input=Command(resume=<span class="str">"yes"</span>), config=cfg)</code></pre>
     </section>
 
     <!-- Slide 5: Checkpoint -->
@@ -570,8 +576,8 @@ graph = builder.compile(checkpointer=checkpointer)
 
 cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"user-42"</span>}}
 
-graph.invoke({<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"안녕"</span>)]}, cfg)
-graph.invoke({<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"아까 뭐라고 했지?"</span>)]}, cfg)  <span class="cm"># 이어짐</span>
+graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"안녕, 내 이름은 지호야"</span>)]}, config=cfg)
+graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"내 이름 기억해?"</span>)]}, config=cfg)  <span class="cm"># 이어짐</span>
 
 <span class="cm"># 과거 상태 확인 / 시간여행</span>
 <span class="kw">for</span> snap <span class="kw">in</span> graph.get_state_history(cfg):
