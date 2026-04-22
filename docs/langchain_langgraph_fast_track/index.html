@@ -821,7 +821,7 @@ graph.stream({"review": "..."})    # ← 그래프에도 stream 이 전파됨</t
         <pre class="magic-code-mount shiki-magic-move-container"></pre>
         <div class="code-steps-nav">
           <button data-dir="prev" aria-label="이전 스텝">‹</button>
-          <span class="code-step-counter">1 / 4</span>
+          <span class="code-step-counter">1 / 5</span>
           <button data-dir="next" aria-label="다음 스텝">›</button>
         </div>
         <template data-step>from typing import TypedDict
@@ -834,10 +834,12 @@ class State(TypedDict):
         <template data-step>from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 
+# 스테이트 정의 - 그래프 전체에서 공유
 class State(TypedDict):
     review: str
     analysis: ReviewAnalysis | None
 
+# 노드 정의
 def agent(state: State):
     result = chain.invoke({"review": state["review"]})
     return {"analysis": result}</template>
@@ -853,9 +855,15 @@ def agent(state: State):
     return {"analysis": result}
 
 builder = StateGraph(State)
+
+# 노드 추가
 builder.add_node("agent", agent)
+
+# 엣지 추가
 builder.add_edge(START, "agent")
 builder.add_edge("agent", END)
+
+# 그래프 생성
 graph = builder.compile()</template>
         <template data-step>from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
@@ -872,10 +880,42 @@ builder = StateGraph(State)
 builder.add_node("agent", agent)
 builder.add_edge(START, "agent")
 builder.add_edge("agent", END)
+
 graph = builder.compile()
 
 graph.invoke(input={"review": "연출은 좋았지만 각본이 아쉬웠다."})
 # → {"review": "...", "analysis": ReviewAnalysis(sentiment='neutral', ...)}</template>
+        <template data-step>from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    review: str
+    analysis: ReviewAnalysis | None
+
+def agent(state: State):
+    result = chain.invoke({"review": state["review"]})
+    return {"analysis": result}
+
+builder = StateGraph(State)
+builder.add_node("agent", agent)
+builder.add_edge(START, "agent")
+builder.add_edge("agent", END)
+
+graph = builder.compile()
+
+# 초기 State 를 명시적으로 선언해서 실행
+initial_state: State = {
+    "review": "연출은 좋았지만 각본이 아쉬웠다.",
+    "analysis": None,
+}
+
+graph.invoke(initial_state)
+# → {"review": "...", "analysis": ReviewAnalysis(sentiment='neutral', ...)}</template>
+      </div>
+
+      <div style="display:flex;justify-content:center;margin-top:20px;">
+        <img src="images/slide10-state-node-graph.png" alt="State·Node·Graph: START → agent → END"
+             style="max-height:240px;background:#fff;border:1px solid var(--surface-2);border-radius:12px;padding:12px;">
       </div>
     </section>
 
@@ -940,6 +980,11 @@ builder.add_edge("reply_positive", END)
 builder.add_edge("reply_negative", END)
 
 graph = builder.compile()</template>
+      </div>
+
+      <div style="display:flex;justify-content:center;margin-top:20px;">
+        <img src="images/slide11-conditional-edge.png" alt="Conditional edge graph: START → agent → (reply_positive | reply_negative) → END"
+             style="max-height:260px;background:#fff;border:1px solid var(--surface-2);border-radius:12px;padding:12px;">
       </div>
     </section>
 
@@ -1056,6 +1101,11 @@ graph.invoke(input=Command(resume={
     "summary": "각본의 약점이 두드러진 리뷰.",
     "keywords": ["각본", "연출"],
 }), config=cfg)</template>
+      </div>
+
+      <div style="display:flex;justify-content:center;margin-top:20px;">
+        <img src="images/slide12-interrupt.png" alt="Interrupt graph: START → agent → human_review → END"
+             style="max-height:260px;background:#fff;border:1px solid var(--surface-2);border-radius:12px;padding:12px;">
       </div>
     </section>
 
@@ -1361,6 +1411,11 @@ builder.add_edge("summarize", END)
 graph = builder.compile()
 
 graph.invoke({"question": "서울 날씨 알려줘"})</template>
+      </div>
+
+      <div style="display:flex;justify-content:center;margin-top:20px;">
+        <img src="images/slide16-graph-with-agent.png" alt="Outer graph calling an agent: START → weather_agent → summarize → END"
+             style="max-height:260px;background:#fff;border:1px solid var(--surface-2);border-radius:12px;padding:12px;">
       </div>
     </section>
 
