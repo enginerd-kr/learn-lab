@@ -1,0 +1,55 @@
+/*
+ * magic-code.css — container + counter chrome for shiki-magic-move blocks.
+ * Pair with magic-code.js. The host page must also load shiki-magic-move's
+ * own dist/style.css and an importmap for "shiki" + "shiki-magic-move/".
+ */
+
+.magic-code {
+  position: relative;
+  background: var(--code-bg);
+  border: 1px solid var(--surface-2);
+  border-radius: 10px;
+  padding: 18px 20px 46px;
+  margin-top: 14px;
+  scroll-margin-bottom: 140px;
+  scroll-margin-top: 40px;
+}
+
+.magic-code .shiki-magic-move-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0;
+  padding: 0;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre;
+  overflow: visible;
+  position: relative;
+}
+
+.magic-code .code-steps-nav {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid var(--surface-2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  backdrop-filter: blur(6px);
+  z-index: 2;
+}
+
+.magic-code .code-steps-nav button { display: none; }
+
+.magic-code .code-step-counter {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: center;
+}

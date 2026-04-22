@@ -18,3 +18,9 @@ python --version
 node --version
 uv --version
 ```
+
+## 2. 코드 작성
+
+### 코트 품질 체크
+
+- 코드 작성 후 **반드시** 포맷, 린트 체크: `uv run ruff check --fix .`

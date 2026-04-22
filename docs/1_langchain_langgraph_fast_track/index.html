@@ -29,37 +29,6 @@
     overflow: hidden;
   }
 
-  .deck {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  .slide {
-    position: absolute;
-    inset: 0;
-    padding: 64px 80px 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: safe center;
-    opacity: 0;
-    transform: translateX(40px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    pointer-events: none;
-    overflow-y: auto;
-  }
-
-  .slide.active {
-    opacity: 1;
-    transform: translateX(0);
-    pointer-events: auto;
-  }
-
-  .slide.prev {
-    transform: translateX(-40px);
-  }
-
   h1 {
     font-size: 56px;
     font-weight: 800;
@@ -230,86 +199,6 @@
     font-weight: bold;
   }
 
-  .nav {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: rgba(30, 41, 59, 0.9);
-    backdrop-filter: blur(10px);
-    padding: 10px 20px;
-    border-radius: 999px;
-    border: 1px solid var(--surface-2);
-    z-index: 100;
-  }
-
-  .nav button {
-    background: transparent;
-    border: none;
-    color: var(--text);
-    cursor: pointer;
-    font-size: 20px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s ease;
-  }
-
-  .nav button:hover:not(:disabled) {
-    background: var(--surface-2);
-  }
-
-  .nav button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .dots {
-    display: flex;
-    gap: 8px;
-  }
-
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--surface-2);
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
-  }
-
-  .dot.active {
-    background: var(--accent);
-    transform: scale(1.4);
-  }
-
-  .counter {
-    color: var(--muted);
-    font-size: 14px;
-    font-variant-numeric: tabular-nums;
-    min-width: 40px;
-    text-align: center;
-  }
-
-  .hint {
-    position: fixed;
-    top: 24px;
-    right: 28px;
-    z-index: 100;
-    color: var(--muted);
-    font-size: 13px;
-    background: rgba(30, 41, 59, 0.7);
-    padding: 6px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--surface-2);
-  }
-
   .hero-icon {
     font-size: 80px;
     margin-bottom: 16px;
@@ -350,61 +239,16 @@
   }
 
   @media (max-width: 900px) {
-    .slide { padding: 40px 28px; }
     h1 { font-size: 36px; }
     h2 { font-size: 28px; }
     p, li { font-size: 16px; }
     .two-col, .comparison { grid-template-columns: 1fr; }
   }
 
-  /* Shiki Magic Move */
-  .magic-code {
-    position: relative;
-    background: var(--code-bg);
-    border: 1px solid var(--surface-2);
-    border-radius: 10px;
-    padding: 18px 20px 46px;
-    margin-top: 14px;
-    scroll-margin-bottom: 140px;
-    scroll-margin-top: 40px;
-  }
-  .magic-code .shiki-magic-move-container {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    margin: 0;
-    padding: 0;
-    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
-    font-size: 15px;
-    line-height: 1.6;
-    white-space: pre;
-    overflow: visible;
-    position: relative;
-  }
-  .magic-code .code-steps-nav {
-    position: absolute;
-    right: 14px;
-    bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(30, 41, 59, 0.85);
-    border: 1px solid var(--surface-2);
-    border-radius: 999px;
-    padding: 4px 10px;
-    backdrop-filter: blur(6px);
-    z-index: 2;
-  }
-  .magic-code .code-steps-nav button { display: none; }
-  .magic-code .code-step-counter {
-    color: var(--muted);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-    min-width: 28px;
-    text-align: center;
-  }
 </style>
 
+<link rel="stylesheet" href="../assets/slides.css">
+<link rel="stylesheet" href="../assets/magic-code.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shiki-magic-move@0.5.0/dist/style.css">
 
 <script type="importmap">
@@ -1666,132 +1510,14 @@ graph.invoke({"question": "서울 날씨 알려줘"})</template>
   </div>
 
   <div class="nav">
+    <a class="nav-home" href="../" aria-label="목차로" title="목차로">☰</a>
     <button id="prev" aria-label="이전">‹</button>
     <div class="dots" id="dots"></div>
     <span class="counter" id="counter">1 / 6</span>
     <button id="next" aria-label="다음">›</button>
   </div>
 
-<script>
-  const slides = document.querySelectorAll('.slide');
-  const dotsEl = document.getElementById('dots');
-  const counter = document.getElementById('counter');
-  const prevBtn = document.getElementById('prev');
-  const nextBtn = document.getElementById('next');
-  let current = 0;
-
-  slides.forEach((_, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'dot' + (i === 0 ? ' active' : '');
-    dot.addEventListener('click', () => goTo(i));
-    dotsEl.appendChild(dot);
-  });
-
-  function goTo(i) {
-    if (i < 0 || i >= slides.length) return;
-    slides[current].classList.remove('active');
-    slides[current].classList.toggle('prev', i > current);
-    current = i;
-    slides.forEach((s, idx) => {
-      s.classList.toggle('active', idx === current);
-      s.classList.toggle('prev', idx < current);
-    });
-    document.querySelectorAll('.dot').forEach((d, idx) => {
-      d.classList.toggle('active', idx === current);
-    });
-    counter.textContent = `${current + 1} / ${slides.length}`;
-    prevBtn.disabled = current === 0;
-    nextBtn.disabled = current === slides.length - 1;
-    slides.forEach(s => { s.scrollTop = 0; });
-    const target = slides[current];
-    requestAnimationFrame(() => {
-      target.scrollTop = 0;
-      requestAnimationFrame(() => { target.scrollTop = 0; });
-    });
-    setTimeout(() => { target.scrollTop = 0; }, 500);
-  }
-
-  prevBtn.addEventListener('click', () => goTo(current - 1));
-  nextBtn.addEventListener('click', () => goTo(current + 1));
-
-  document.addEventListener('keydown', (e) => {
-    const magic = slides[current]?._magicStepper;
-    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
-      e.preventDefault();
-      if (magic && magic.next()) return;
-      goTo(current + 1);
-    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-      e.preventDefault();
-      if (magic && magic.prev()) return;
-      goTo(current - 1);
-    } else if (e.key === 'Home') {
-      goTo(0);
-    } else if (e.key === 'End') {
-      goTo(slides.length - 1);
-    }
-  });
-
-  goTo(0);
-</script>
-
-<script type="module">
-  import { createHighlighter } from 'shiki';
-  import { codeToKeyedTokens, createMagicMoveMachine } from 'shiki-magic-move/core';
-  import { MagicMoveRenderer } from 'shiki-magic-move/renderer';
-
-  const THEME = 'github-dark';
-  const blocks = Array.from(document.querySelectorAll('.magic-code'));
-  if (blocks.length) {
-    const langs = [...new Set(blocks.map(b => b.dataset.lang || 'python'))];
-    const highlighter = await createHighlighter({ themes: [THEME], langs });
-
-    for (const container of blocks) {
-      const lang = container.dataset.lang || 'python';
-      const steps = Array.from(container.querySelectorAll('template[data-step]'))
-        .map(t => t.innerHTML.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trimEnd());
-      if (!steps.length) continue;
-
-      const mount = container.querySelector('.magic-code-mount');
-      const counter = container.querySelector('.code-step-counter');
-      const prevBtn = container.querySelector('[data-dir="prev"]');
-      const nextBtn = container.querySelector('[data-dir="next"]');
-
-      const renderer = new MagicMoveRenderer(mount, {
-        duration: 900,
-        delayMove: 0.15,
-        delayLeave: 0,
-        delayEnter: 0.45,
-        stagger: 2,
-        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-      });
-      renderer.setCssVariables();
-      const machine = createMagicMoveMachine(
-        code => codeToKeyedTokens(highlighter, code, { lang, theme: THEME })
-      );
-      let idx = 0;
-
-      function render(i, animated = true) {
-        const { current } = machine.commit(steps[i]);
-        renderer.render(current);
-        counter.textContent = `${i + 1} / ${steps.length}`;
-        prevBtn.disabled = i === 0;
-        nextBtn.disabled = i === steps.length - 1;
-        if (animated) container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-
-      render(0, false);
-
-      const stepper = {
-        next: () => { if (idx < steps.length - 1) { idx++; render(idx); return true; } return false; },
-        prev: () => { if (idx > 0) { idx--; render(idx); return true; } return false; },
-      };
-      prevBtn.addEventListener('click', stepper.prev);
-      nextBtn.addEventListener('click', stepper.next);
-
-      const slide = container.closest('.slide');
-      if (slide) slide._magicStepper = stepper;
-    }
-  }
-</script>
+<script type="module" src="../assets/slides.js"></script>
+<script type="module" src="../assets/magic-code.js"></script>
 </body>
 </html>
