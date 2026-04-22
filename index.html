@@ -584,10 +584,67 @@ graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"us
     <span class="fn">print</span>(snap.values, snap.next)</code></pre>
     </section>
 
-    <!-- Slide 6: Wrap-up -->
+    <!-- Slide 6: create_agent -->
+    <section class="slide">
+      <h2>create_agent — 프리셋 ReAct 에이전트</h2>
+      <p class="subtitle">모델 + 툴 + 시스템 프롬프트만 주면 그래프를 자동으로 조립</p>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>🎁 무엇을 해주나?</h3>
+          <ul>
+            <li>내부적으로 <b>agent ↔ tools</b> 를 오가는 ReAct 루프 그래프를 자동 생성</li>
+            <li>메시지 상태(<code>messages</code>)와 <code>add_messages</code> reducer를 기본 제공</li>
+            <li><code>checkpointer</code> 전달 시 <b>대화 지속성</b> 바로 사용</li>
+            <li><code>interrupt_before=["tools"]</code> 로 툴 실행 전 사람 승인도 원샷 설정</li>
+            <li>반환값은 일반 <code>CompiledGraph</code> — 커스터마이즈·확장 가능</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🧭 언제 쓰나?</h3>
+          <ul>
+            <li>툴을 쓰는 <b>일반적인 챗 에이전트</b>를 빠르게 만들고 싶을 때</li>
+            <li>직접 <code>StateGraph</code>로 조립하기 전, <b>프로토타입</b>용</li>
+            <li>표준 패턴으로 충분하고, 특이한 분기가 필요 없을 때</li>
+          </ul>
+          <p style="font-size:15px;color:var(--muted);margin-top:12px;">
+            ※ 분기/병렬/도메인 특화 흐름이 필요하면 그대로 <code>StateGraph</code>로 내려가면 됩니다.
+          </p>
+        </div>
+      </div>
+
+      <pre><code><span class="kw">from</span> langgraph.prebuilt <span class="kw">import</span> create_react_agent
+<span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> InMemorySaver
+<span class="kw">from</span> langchain_core.tools <span class="kw">import</span> tool
+
+<span class="cm"># 1) 툴 정의</span>
+<span class="kw">@tool</span>
+<span class="kw">def</span> <span class="fn">get_weather</span>(city: <span class="fn">str</span>) -> <span class="fn">str</span>:
+    <span class="str">"""도시의 날씨를 반환."""</span>
+    <span class="kw">return</span> <span class="fn">f</span><span class="str">"{city}: 맑음 22°C"</span>
+
+<span class="cm"># 2) 에이전트 생성 (모델 + 툴 + 프롬프트 + 체크포인트 + 인터럽트)</span>
+agent = create_react_agent(
+    model=<span class="str">"anthropic:claude-sonnet-4-6"</span>,
+    tools=[get_weather],
+    prompt=<span class="str">"너는 친절한 한국어 비서야."</span>,
+    checkpointer=InMemorySaver(),
+    interrupt_before=[<span class="str">"tools"</span>],   <span class="cm"># 툴 실행 전 사람 승인</span>
+)
+
+<span class="cm"># 3) 채팅 메시지 인터페이스로 호출</span>
+cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"user-42"</span>}}
+agent.invoke(
+    input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"서울 날씨 알려줘"</span>)]},
+    config=cfg,
+)</code></pre>
+    </section>
+
+    <!-- Slide 7: Wrap-up -->
     <section class="slide">
       <h2>한 장 요약</h2>
-      <p class="subtitle">LangGraph = State + Node + Graph + Checkpoint + Interrupt</p>
+      <p class="subtitle">LangGraph = State + Node + Graph + Checkpoint + Interrupt ( + create_agent 프리셋)</p>
 
       <div class="cards">
         <div class="card">
