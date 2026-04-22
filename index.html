@@ -356,7 +356,82 @@
     p, li { font-size: 16px; }
     .two-col, .comparison { grid-template-columns: 1fr; }
   }
+
+  /* Shiki Magic Move */
+  .magic-code {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--surface-2);
+    border-radius: 10px;
+    padding: 18px 20px 46px;
+    margin-top: 14px;
+  }
+  .magic-code .shiki-magic-move-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0;
+    padding: 0;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+    position: relative;
+  }
+  .magic-code .code-steps-nav {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid var(--surface-2);
+    border-radius: 999px;
+    padding: 4px 10px;
+    backdrop-filter: blur(6px);
+    z-index: 2;
+  }
+  .magic-code .code-steps-nav button {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 16px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .magic-code .code-steps-nav button:hover:not(:disabled) {
+    background: var(--surface-2);
+  }
+  .magic-code .code-steps-nav button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .magic-code .code-step-counter {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    min-width: 28px;
+    text-align: center;
+  }
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shiki-magic-move@0.5.0/dist/style.css">
+
+<script type="importmap">
+{
+  "imports": {
+    "shiki": "https://esm.sh/shiki@1.22.0",
+    "shiki-magic-move/": "https://esm.sh/shiki-magic-move@0.5.0/"
+  }
+}
+</script>
 </head>
 <body>
   <div class="hint">← → 키 또는 Space 로 이동</div>
@@ -479,19 +554,37 @@ graph.add_edge(<span class="str">"agent"</span>, <span class="str">"tool"</span>
         체인을 <b>3단계(프롬프트 → 모델 → 파서)</b>에 걸쳐 완성해봅니다. 이번 슬라이드는 <b>1단계: 프롬프트</b>.
       </p>
 
-      <pre style="min-height:340px;"><code><span class="kw">from</span> langchain_core.prompts <span class="kw">import</span> ChatPromptTemplate
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 3</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langchain_core.prompts import ChatPromptTemplate</template>
+        <template data-step>from langchain_core.prompts import ChatPromptTemplate
 
-<span class="cm"># 1) 리뷰 분석용 프롬프트 — 출력 형식을 시스템 프롬프트에 명시</span>
+# 1) 리뷰 분석용 프롬프트 — 출력 형식을 시스템 프롬프트에 명시
 prompt = ChatPromptTemplate.from_messages([
-    (<span class="str">"system"</span>,
-     <span class="str">"너는 영화 리뷰 분석가야. 아래 JSON 스키마로만 답해.\n"</span>
-     <span class="str">"{{\"sentiment\": \"positive|negative|neutral\", "</span>
-     <span class="str">"\"summary\": str, \"keywords\": [str]}}"</span>),
-    (<span class="str">"user"</span>, <span class="str">"다음 리뷰를 분석해줘:\n{review}"</span>),
+    ("system",
+     "너는 영화 리뷰 분석가야. 아래 JSON 스키마로만 답해.\n"
+     '{"sentiment": "positive|negative|neutral", '
+     '"summary": str, "keywords": [str]}'),
+    ("user", "다음 리뷰를 분석해줘:\n{review}"),
+])</template>
+        <template data-step>from langchain_core.prompts import ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system",
+     "너는 영화 리뷰 분석가야. 아래 JSON 스키마로만 답해.\n"
+     '{"sentiment": "positive|negative|neutral", '
+     '"summary": str, "keywords": [str]}'),
+    ("user", "다음 리뷰를 분석해줘:\n{review}"),
 ])
 
-<span class="cm"># 프롬프트만 먼저 확인 (모델/파서는 다음 슬라이드에서 연결)</span>
-prompt.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})</code></pre>
+# 프롬프트만 먼저 확인 (모델/파서는 다음 슬라이드에서 연결)
+prompt.invoke({"review": "연출은 좋았지만 각본이 아쉬웠다."})</template>
+      </div>
     </section>
 
     <!-- Slide: LangChain 모델 선언 -->
@@ -552,12 +645,25 @@ llm = init_chat_model(<span class="str">"google_genai:gemini-2.0-flash"</span>)<
         프롬프트 + LLM 체인이 완성됩니다. 다음 슬라이드에서 JSON 파서까지 연결합니다.
       </p>
 
-      <pre style="min-height:220px;"><code><span class="cm"># 앞 슬라이드의 prompt 를 그대로 사용</span>
-llm = ChatOpenAI(model=<span class="str">"gpt-4o-mini"</span>, temperature=<span class="num">0</span>)
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 3</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step># 앞 슬라이드의 prompt 를 그대로 사용
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)</template>
+        <template data-step># 앞 슬라이드의 prompt 를 그대로 사용
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+chain = prompt | llm</template>
+        <template data-step># 앞 슬라이드의 prompt 를 그대로 사용
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 chain = prompt | llm
 
-chain.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
-<span class="cm"># → AIMessage(content='{"sentiment": "neutral", ...}')  ← 아직 문자열</span></code></pre>
+chain.invoke({"review": "연출은 좋았지만 각본이 아쉬웠다."})
+# → AIMessage(content='{"sentiment": "neutral", ...}')  ← 아직 문자열</template>
+      </div>
     </section>
 
     <!-- Slide: JSON Output Parser -->
@@ -586,25 +692,64 @@ chain.invoke({<span class="str">"review"</span>: <span class="str">"연출은 �
         </div>
       </div>
 
-      <pre style="min-height:340px;"><code><span class="kw">from</span> langchain_core.output_parsers <span class="kw">import</span> JsonOutputParser
-<span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
-<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 4</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langchain_core.output_parsers import JsonOutputParser
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
 
-<span class="cm"># 1) 결과 스키마 정의 (선택)</span>
-<span class="kw">class</span> <span class="fn">ReviewAnalysis</span>(BaseModel):
-    sentiment: <span class="fn">str</span> = Field(description=<span class="str">"positive | negative | neutral"</span>)
-    summary: <span class="fn">str</span>
-    keywords: <span class="fn">list</span>[<span class="fn">str</span>]
+# 1) 결과 스키마 정의 (선택)
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]</template>
+        <template data-step>from langchain_core.output_parsers import JsonOutputParser
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
+
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]
+
+parser = JsonOutputParser(pydantic_object=ReviewAnalysis)</template>
+        <template data-step>from langchain_core.output_parsers import JsonOutputParser
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
+
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]
 
 parser = JsonOutputParser(pydantic_object=ReviewAnalysis)
 
-<span class="cm"># 2) 앞 슬라이드의 prompt 와 llm 을 그대로 사용 → 파서까지 파이프 연결</span>
-llm = ChatOpenAI(model=<span class="str">"gpt-4o-mini"</span>, temperature=<span class="num">0</span>)
+# 2) 앞 슬라이드의 prompt 와 llm 을 그대로 사용 → 파서까지 파이프 연결
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+chain = prompt | llm | parser</template>
+        <template data-step>from langchain_core.output_parsers import JsonOutputParser
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
+
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]
+
+parser = JsonOutputParser(pydantic_object=ReviewAnalysis)
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 chain = prompt | llm | parser
 
-result = chain.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
-<span class="cm"># → {"sentiment": "neutral", "summary": "...", "keywords": [...]}</span>
-<span class="fn">print</span>(result[<span class="str">"sentiment"</span>])</code></pre>
+result = chain.invoke({"review": "연출은 좋았지만 각본이 아쉬웠다."})
+# → {"sentiment": "neutral", "summary": "...", "keywords": [...]}
+print(result["sentiment"])</template>
+      </div>
     </section>
 
     <!-- Slide: with_structured_output -->
@@ -633,25 +778,62 @@ result = chain.invoke({<span class="str">"review"</span>: <span class="str">"연
         </div>
       </div>
 
-      <pre style="min-height:340px;"><code><span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
-<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 4</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
 
-<span class="cm"># 1) 앞 슬라이드와 동일한 스키마</span>
-<span class="kw">class</span> <span class="fn">ReviewAnalysis</span>(BaseModel):
-    sentiment: <span class="fn">str</span> = Field(description=<span class="str">"positive | negative | neutral"</span>)
-    summary: <span class="fn">str</span>
-    keywords: <span class="fn">list</span>[<span class="fn">str</span>]
+# 1) 앞 슬라이드와 동일한 스키마
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]</template>
+        <template data-step>from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
 
-<span class="cm"># 2) 모델 자체에 스키마를 바인딩 — 파서 불필요</span>
-llm = ChatOpenAI(model=<span class="str">"gpt-4o-mini"</span>, temperature=<span class="num">0</span>)
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]
+
+# 2) 모델 자체에 스키마를 바인딩 — 파서 불필요
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+structured_llm = llm.with_structured_output(ReviewAnalysis)</template>
+        <template data-step>from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
+
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 structured_llm = llm.with_structured_output(ReviewAnalysis)
 
-<span class="cm"># 3) prompt 는 3페이지 것을 그대로 재사용</span>
+# 3) prompt 는 앞 슬라이드 것을 그대로 재사용
+chain = prompt | structured_llm</template>
+        <template data-step>from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
+
+class ReviewAnalysis(BaseModel):
+    sentiment: str = Field(description="positive | negative | neutral")
+    summary: str
+    keywords: list[str]
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+structured_llm = llm.with_structured_output(ReviewAnalysis)
+
 chain = prompt | structured_llm
 
-result = chain.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
-<span class="cm"># → ReviewAnalysis(sentiment='neutral', summary='...', keywords=[...])</span>
-<span class="fn">print</span>(result.sentiment, result.keywords)</code></pre>
+result = chain.invoke({"review": "연출은 좋았지만 각본이 아쉬웠다."})
+# → ReviewAnalysis(sentiment='neutral', summary='...', keywords=[...])
+print(result.sentiment, result.keywords)</template>
+      </div>
     </section>
 
     <!-- Slide: Runnable 인터페이스 -->
@@ -682,25 +864,48 @@ result = chain.invoke({<span class="str">"review"</span>: <span class="str">"연
         </div>
       </div>
 
-      <pre style="min-height:300px;"><code><span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> RunnableLambda
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 3</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langchain_core.runnables import RunnableLambda
 
-<span class="cm"># 1) 평범한 파이썬 함수를 Runnable 로 감싸기</span>
-<span class="kw">def</span> <span class="fn">shout</span>(x: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="kw">return</span> x.upper() + <span class="str">"!"</span>
+# 1) 평범한 파이썬 함수를 Runnable 로 감싸기
+def shout(x: str) -> str:
+    return x.upper() + "!"
 
 shout_r = RunnableLambda(shout)
 
-shout_r.invoke(<span class="str">"hi"</span>)            <span class="cm"># → "HI!"</span>
-shout_r.batch([<span class="str">"hi"</span>, <span class="str">"bye"</span>])    <span class="cm"># → ["HI!", "BYE!"]  ← 병렬 자동</span>
+shout_r.invoke("hi")            # → "HI!"
+shout_r.batch(["hi", "bye"])    # → ["HI!", "BYE!"]  ← 병렬 자동</template>
+        <template data-step>from langchain_core.runnables import RunnableLambda
 
-<span class="cm"># 2) 다른 Runnable 과 파이프로 합성 — 동일 규약이 그대로 전파</span>
+def shout(x: str) -> str:
+    return x.upper() + "!"
+
+shout_r = RunnableLambda(shout)
+
+# 2) 다른 Runnable 과 파이프로 합성 — 동일 규약이 그대로 전파
 chain = prompt | llm | parser | shout_r
-chain.invoke({<span class="str">"review"</span>: <span class="str">"..."</span>})   <span class="cm"># invoke / stream / batch 모두 동작</span>
+chain.invoke({"review": "..."})   # invoke / stream / batch 모두 동작</template>
+        <template data-step>from langchain_core.runnables import RunnableLambda
 
-<span class="cm"># 3) LangGraph 노드로 그대로 꽂아도 동일하게 동작</span>
-builder.add_node(<span class="str">"shout"</span>, shout_r)      <span class="cm"># 함수든 Runnable이든 OK</span>
+def shout(x: str) -> str:
+    return x.upper() + "!"
+
+shout_r = RunnableLambda(shout)
+
+chain = prompt | llm | parser | shout_r
+chain.invoke({"review": "..."})
+
+# 3) LangGraph 노드로 그대로 꽂아도 동일하게 동작
+builder.add_node("shout", shout_r)      # 함수든 Runnable이든 OK
 graph = builder.compile()
-graph.stream({<span class="str">"review"</span>: <span class="str">"..."</span>})    <span class="cm"># ← 그래프에도 stream 이 전파됨</span></code></pre>
+graph.stream({"review": "..."})    # ← 그래프에도 stream 이 전파됨</template>
+      </div>
     </section>
 
     <!-- Slide: LangGraph 섹션 타이틀 -->
@@ -785,26 +990,66 @@ graph.stream({<span class="str">"review"</span>: <span class="str">"..."</span>}
         </div>
       </div>
 
-      <pre style="min-height:320px;"><code><span class="kw">from</span> typing <span class="kw">import</span> TypedDict
-<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 4</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
 
-<span class="cm"># 앞 슬라이드의 chain = prompt | structured_llm 을 그대로 재사용</span>
-<span class="kw">class</span> <span class="fn">State</span>(TypedDict):
-    review: <span class="fn">str</span>
-    analysis: ReviewAnalysis | <span class="kw">None</span>
+# 앞 슬라이드의 chain = prompt | structured_llm 을 그대로 재사용
+class State(TypedDict):
+    review: str
+    analysis: ReviewAnalysis | None</template>
+        <template data-step>from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
 
-<span class="kw">def</span> <span class="fn">agent</span>(state: State):
-    result = chain.invoke({<span class="str">"review"</span>: state[<span class="str">"review"</span>]})
-    <span class="kw">return</span> {<span class="str">"analysis"</span>: result}
+class State(TypedDict):
+    review: str
+    analysis: ReviewAnalysis | None
+
+def agent(state: State):
+    result = chain.invoke({"review": state["review"]})
+    return {"analysis": result}</template>
+        <template data-step>from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    review: str
+    analysis: ReviewAnalysis | None
+
+def agent(state: State):
+    result = chain.invoke({"review": state["review"]})
+    return {"analysis": result}
 
 builder = StateGraph(State)
-builder.add_node(<span class="str">"agent"</span>, agent)
-builder.add_edge(START, <span class="str">"agent"</span>)
-builder.add_edge(<span class="str">"agent"</span>, END)
+builder.add_node("agent", agent)
+builder.add_edge(START, "agent")
+builder.add_edge("agent", END)
+graph = builder.compile()</template>
+        <template data-step>from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    review: str
+    analysis: ReviewAnalysis | None
+
+def agent(state: State):
+    result = chain.invoke({"review": state["review"]})
+    return {"analysis": result}
+
+builder = StateGraph(State)
+builder.add_node("agent", agent)
+builder.add_edge(START, "agent")
+builder.add_edge("agent", END)
 graph = builder.compile()
 
-graph.invoke(input={<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
-<span class="cm"># → {"review": "...", "analysis": ReviewAnalysis(sentiment='neutral', ...)}</span></code></pre>
+graph.invoke(input={"review": "연출은 좋았지만 각본이 아쉬웠다."})
+# → {"review": "...", "analysis": ReviewAnalysis(sentiment='neutral', ...)}</template>
+      </div>
     </section>
 
     <!-- Slide: Conditional Edge -->
@@ -825,29 +1070,50 @@ graph.invoke(input={<span class="str">"review"</span>: <span class="str">"연출
         <div class="node end">END</div>
       </div>
 
-      <pre style="min-height:320px;"><code><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 3</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langgraph.graph import StateGraph, START, END
 
-<span class="cm"># 앞 페이지의 State / agent 를 그대로 사용</span>
-<span class="kw">def</span> <span class="fn">reply_positive</span>(state: State): <span class="kw">return</span> {}
-<span class="kw">def</span> <span class="fn">reply_negative</span>(state: State): <span class="kw">return</span> {}
+# 앞 페이지의 State / agent 를 그대로 사용
+def reply_positive(state: State): return {}
+def reply_negative(state: State): return {}</template>
+        <template data-step>from langgraph.graph import StateGraph, START, END
 
-<span class="cm"># 라우팅 함수 — 다음 노드 이름(문자열)을 반환</span>
-<span class="kw">def</span> <span class="fn">route</span>(state: State) -> <span class="fn">str</span>:
-    <span class="kw">if</span> state[<span class="str">"analysis"</span>].sentiment == <span class="str">"positive"</span>:
-        <span class="kw">return</span> <span class="str">"reply_positive"</span>
-    <span class="kw">return</span> <span class="str">"reply_negative"</span>
+def reply_positive(state: State): return {}
+def reply_negative(state: State): return {}
+
+# 라우팅 함수 — 다음 노드 이름(문자열)을 반환
+def route(state: State) -> str:
+    if state["analysis"].sentiment == "positive":
+        return "reply_positive"
+    return "reply_negative"</template>
+        <template data-step>from langgraph.graph import StateGraph, START, END
+
+def reply_positive(state: State): return {}
+def reply_negative(state: State): return {}
+
+def route(state: State) -> str:
+    if state["analysis"].sentiment == "positive":
+        return "reply_positive"
+    return "reply_negative"
 
 builder = StateGraph(State)
-builder.add_node(<span class="str">"agent"</span>, agent)
-builder.add_node(<span class="str">"reply_positive"</span>, reply_positive)
-builder.add_node(<span class="str">"reply_negative"</span>, reply_negative)
+builder.add_node("agent", agent)
+builder.add_node("reply_positive", reply_positive)
+builder.add_node("reply_negative", reply_negative)
 
-builder.add_edge(START, <span class="str">"agent"</span>)
-builder.add_conditional_edges(<span class="str">"agent"</span>, route)   <span class="cm"># ← 분기</span>
-builder.add_edge(<span class="str">"reply_positive"</span>, END)
-builder.add_edge(<span class="str">"reply_negative"</span>, END)
+builder.add_edge(START, "agent")
+builder.add_conditional_edges("agent", route)   # ← 분기
+builder.add_edge("reply_positive", END)
+builder.add_edge("reply_negative", END)
 
-graph = builder.compile()</code></pre>
+graph = builder.compile()</template>
+      </div>
     </section>
 
     <!-- Slide 4: Interrupt -->
@@ -886,36 +1152,84 @@ graph = builder.compile()</code></pre>
         </div>
       </div>
 
-      <pre style="min-height:320px;"><code><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
-<span class="kw">from</span> langgraph.types <span class="kw">import</span> interrupt, Command
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 4</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
 
-<span class="cm"># 9페이지 그래프 + human_review 노드 추가</span>
-<span class="kw">def</span> <span class="fn">human_review</span>(state: State):
+# 앞 그래프 + human_review 노드 추가
+def human_review(state: State):
     edited = interrupt({
-        <span class="str">"question"</span>: <span class="str">"분석 결과를 확인해 주세요. 수정할 부분이 있나요?"</span>,
-        <span class="str">"analysis"</span>: state[<span class="str">"analysis"</span>].model_dump(),
+        "question": "분석 결과를 확인해 주세요. 수정할 부분이 있나요?",
+        "analysis": state["analysis"].model_dump(),
     })
-    <span class="kw">return</span> {<span class="str">"analysis"</span>: ReviewAnalysis(**edited)}
+    return {"analysis": ReviewAnalysis(**edited)}</template>
+        <template data-step>from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
+
+def human_review(state: State):
+    edited = interrupt({
+        "question": "분석 결과를 확인해 주세요. 수정할 부분이 있나요?",
+        "analysis": state["analysis"].model_dump(),
+    })
+    return {"analysis": ReviewAnalysis(**edited)}
 
 builder = StateGraph(State)
-builder.add_node(<span class="str">"agent"</span>, agent)
-builder.add_node(<span class="str">"human_review"</span>, human_review)
-builder.add_edge(START, <span class="str">"agent"</span>)
-builder.add_edge(<span class="str">"agent"</span>, <span class="str">"human_review"</span>)
-builder.add_edge(<span class="str">"human_review"</span>, END)
+builder.add_node("agent", agent)
+builder.add_node("human_review", human_review)
+builder.add_edge(START, "agent")
+builder.add_edge("agent", "human_review")
+builder.add_edge("human_review", END)
 graph = builder.compile(checkpointer=InMemorySaver())
 
-cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"review-1"</span>}}
+cfg = {"configurable": {"thread_id": "review-1"}}</template>
+        <template data-step>from langgraph.graph import StateGraph, START, END
+from langgraph.types import interrupt, Command
 
-<span class="cm"># 1) 실행 → human_review 의 interrupt 에서 멈춤</span>
-graph.invoke(input={<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>}, config=cfg)
+def human_review(state: State):
+    edited = interrupt({
+        "question": "분석 결과를 확인해 주세요. 수정할 부분이 있나요?",
+        "analysis": state["analysis"].model_dump(),
+    })
+    return {"analysis": ReviewAnalysis(**edited)}
 
-<span class="cm"># 2) 사람이 확인·수정한 값을 주입해 재개</span>
+builder = StateGraph(State)
+builder.add_node("agent", agent)
+builder.add_node("human_review", human_review)
+builder.add_edge(START, "agent")
+builder.add_edge("agent", "human_review")
+builder.add_edge("human_review", END)
+graph = builder.compile(checkpointer=InMemorySaver())
+
+cfg = {"configurable": {"thread_id": "review-1"}}
+
+# 1) 실행 → human_review 의 interrupt 에서 멈춤
+graph.invoke(input={"review": "연출은 좋았지만 각본이 아쉬웠다."}, config=cfg)</template>
+        <template data-step>builder = StateGraph(State)
+builder.add_node("agent", agent)
+builder.add_node("human_review", human_review)
+builder.add_edge(START, "agent")
+builder.add_edge("agent", "human_review")
+builder.add_edge("human_review", END)
+graph = builder.compile(checkpointer=InMemorySaver())
+
+cfg = {"configurable": {"thread_id": "review-1"}}
+
+# 1) 실행 → human_review 의 interrupt 에서 멈춤
+graph.invoke(input={"review": "연출은 좋았지만 각본이 아쉬웠다."}, config=cfg)
+
+# 2) 사람이 확인·수정한 값을 주입해 재개
 graph.invoke(input=Command(resume={
-    <span class="str">"sentiment"</span>: <span class="str">"negative"</span>,
-    <span class="str">"summary"</span>: <span class="str">"각본의 약점이 두드러진 리뷰."</span>,
-    <span class="str">"keywords"</span>: [<span class="str">"각본"</span>, <span class="str">"연출"</span>],
-}), config=cfg)</code></pre>
+    "sentiment": "negative",
+    "summary": "각본의 약점이 두드러진 리뷰.",
+    "keywords": ["각본", "연출"],
+}), config=cfg)</template>
+      </div>
     </section>
 
     <!-- Slide 5: Checkpoint -->
@@ -954,19 +1268,42 @@ graph.invoke(input=Command(resume={
         </div>
       </div>
 
-      <pre style="min-height:320px;"><code><span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> InMemorySaver
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 3</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langgraph.checkpoint.memory import InMemorySaver
 
 checkpointer = InMemorySaver()
 graph = builder.compile(checkpointer=checkpointer)
 
-cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"user-42"</span>}}
+cfg = {"configurable": {"thread_id": "user-42"}}</template>
+        <template data-step>from langgraph.checkpoint.memory import InMemorySaver
 
-graph.invoke(input={<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"안녕, 내 이름은 지호야"</span>}]}, config=cfg)
-graph.invoke(input={<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"내 이름 기억해?"</span>}]}, config=cfg)  <span class="cm"># 이어짐</span>
+checkpointer = InMemorySaver()
+graph = builder.compile(checkpointer=checkpointer)
 
-<span class="cm"># 과거 상태 확인 / 시간여행</span>
-<span class="kw">for</span> snap <span class="kw">in</span> graph.get_state_history(cfg):
-    <span class="fn">print</span>(snap.values, snap.next)</code></pre>
+cfg = {"configurable": {"thread_id": "user-42"}}
+
+graph.invoke(input={"messages": [{"role": "user", "content": "안녕, 내 이름은 지호야"}]}, config=cfg)
+graph.invoke(input={"messages": [{"role": "user", "content": "내 이름 기억해?"}]}, config=cfg)  # 이어짐</template>
+        <template data-step>from langgraph.checkpoint.memory import InMemorySaver
+
+checkpointer = InMemorySaver()
+graph = builder.compile(checkpointer=checkpointer)
+
+cfg = {"configurable": {"thread_id": "user-42"}}
+
+graph.invoke(input={"messages": [{"role": "user", "content": "안녕, 내 이름은 지호야"}]}, config=cfg)
+graph.invoke(input={"messages": [{"role": "user", "content": "내 이름 기억해?"}]}, config=cfg)
+
+# 과거 상태 확인 / 시간여행
+for snap in graph.get_state_history(cfg):
+    print(snap.values, snap.next)</template>
+      </div>
     </section>
 
     <!-- Slide: Agent 섹션 타이틀 -->
@@ -1031,39 +1368,82 @@ graph.invoke(input={<span class="str">"messages"</span>: [{<span class="str">"ro
         </div>
       </div>
 
-      <pre style="min-height:400px;"><code><span class="cm"># 모델 + 툴 + 프롬프트 + 체크포인트 + HITL 미들웨어</span>
-<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
-<span class="kw">from</span> langchain.agents.middleware <span class="kw">import</span> HumanInTheLoopMiddleware
-<span class="kw">from</span> langchain.tools <span class="kw">import</span> tool
-<span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> InMemorySaver
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 4</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from langchain.agents import create_agent
+from langchain.agents.middleware import HumanInTheLoopMiddleware
+from langchain.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 
-<span class="cm"># 1) 툴 정의</span>
-<span class="kw">@tool</span>
-<span class="kw">def</span> <span class="fn">get_weather</span>(city: <span class="fn">str</span>) -> <span class="fn">str</span>:
-    <span class="str">"""도시의 날씨를 반환."""</span>
-    <span class="kw">return</span> <span class="fn">f</span><span class="str">"{city}: 맑음 22°C"</span>
+# 1) 툴 정의
+@tool
+def get_weather(city: str) -> str:
+    """도시의 날씨를 반환."""
+    return f"{city}: 맑음 22°C"</template>
+        <template data-step>from langchain.agents import create_agent
+from langchain.agents.middleware import HumanInTheLoopMiddleware
+from langchain.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 
-<span class="cm"># 2) 에이전트 생성 (모델 + 툴 + 시스템 프롬프트 + 체크포인트 + HITL 미들웨어)</span>
+@tool
+def get_weather(city: str) -> str:
+    """도시의 날씨를 반환."""
+    return f"{city}: 맑음 22°C"
+
+# 2) 에이전트 생성 (모델 + 툴 + 프롬프트)
 agent = create_agent(
-    model=<span class="str">"anthropic:claude-sonnet-4-6"</span>,
+    model="anthropic:claude-sonnet-4-6",
     tools=[get_weather],
-    system_prompt=<span class="str">"너는 친절한 한국어 비서야."</span>,
+    system_prompt="너는 친절한 한국어 비서야.",
+)</template>
+        <template data-step>from langchain.agents import create_agent
+from langchain.agents.middleware import HumanInTheLoopMiddleware
+from langchain.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
+
+@tool
+def get_weather(city: str) -> str:
+    """도시의 날씨를 반환."""
+    return f"{city}: 맑음 22°C"
+
+# 2) 에이전트 생성 (+ HITL 미들웨어 + 체크포인트)
+agent = create_agent(
+    model="anthropic:claude-sonnet-4-6",
+    tools=[get_weather],
+    system_prompt="너는 친절한 한국어 비서야.",
     middleware=[
         HumanInTheLoopMiddleware(
-            interrupt_on={<span class="str">"get_weather"</span>: <span class="kw">True</span>},   <span class="cm"># 툴 실행 전 사람 승인</span>
+            interrupt_on={"get_weather": True},   # 툴 실행 전 사람 승인
+        ),
+    ],
+    checkpointer=InMemorySaver(),
+)</template>
+        <template data-step>agent = create_agent(
+    model="anthropic:claude-sonnet-4-6",
+    tools=[get_weather],
+    system_prompt="너는 친절한 한국어 비서야.",
+    middleware=[
+        HumanInTheLoopMiddleware(
+            interrupt_on={"get_weather": True},
         ),
     ],
     checkpointer=InMemorySaver(),
 )
 
-<span class="cm"># 3) 채팅 메시지 인터페이스로 호출 (v2: 결과는 GraphOutput)</span>
-cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"user-42"</span>}}
+# 3) 채팅 메시지 인터페이스로 호출 (v2: 결과는 GraphOutput)
+cfg = {"configurable": {"thread_id": "user-42"}}
 result = agent.invoke(
-    input={<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"서울 날씨 알려줘"</span>}]},
+    input={"messages": [{"role": "user", "content": "서울 날씨 알려줘"}]},
     config=cfg,
-    version=<span class="str">"v2"</span>,
+    version="v2",
 )
-<span class="fn">print</span>(result.interrupts)   <span class="cm"># 승인 대기 중인 action_requests</span></code></pre>
+print(result.interrupts)   # 승인 대기 중인 action_requests</template>
+      </div>
     </section>
 
     <!-- Slide: 그래프 안의 에이전트 -->
@@ -1083,42 +1463,78 @@ result = agent.invoke(
         <div class="node end">END</div>
       </div>
 
-      <pre style="min-height:360px;"><code><span class="kw">from</span> typing <span class="kw">import</span> TypedDict
-<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
-<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+      <div class="magic-code" data-lang="python">
+        <pre class="magic-code-mount shiki-magic-move-container"></pre>
+        <div class="code-steps-nav">
+          <button data-dir="prev" aria-label="이전 스텝">‹</button>
+          <span class="code-step-counter">1 / 4</span>
+          <button data-dir="next" aria-label="다음 스텝">›</button>
+        </div>
+        <template data-step>from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+from langchain.agents import create_agent
 
-<span class="cm"># 1) 앞 슬라이드의 에이전트를 그대로 사용</span>
+# 1) 앞 슬라이드의 에이전트를 그대로 사용
 weather_agent = create_agent(
-    model=<span class="str">"anthropic:claude-sonnet-4-6"</span>,
+    model="anthropic:claude-sonnet-4-6",
     tools=[get_weather],
-    system_prompt=<span class="str">"너는 친절한 한국어 비서야."</span>,
+    system_prompt="너는 친절한 한국어 비서야.",
+)</template>
+        <template data-step>from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+from langchain.agents import create_agent
+
+weather_agent = create_agent(
+    model="anthropic:claude-sonnet-4-6",
+    tools=[get_weather],
+    system_prompt="너는 친절한 한국어 비서야.",
 )
 
-<span class="kw">class</span> <span class="fn">State</span>(TypedDict):
-    question: <span class="fn">str</span>
-    agent_output: <span class="fn">dict</span>
-    final: <span class="fn">str</span>
+class State(TypedDict):
+    question: str
+    agent_output: dict
+    final: str</template>
+        <template data-step>weather_agent = create_agent(
+    model="anthropic:claude-sonnet-4-6",
+    tools=[get_weather],
+    system_prompt="너는 친절한 한국어 비서야.",
+)
 
-<span class="cm"># 2) 에이전트를 노드 함수 안에서 호출</span>
-<span class="kw">def</span> <span class="fn">call_agent</span>(state: State):
+class State(TypedDict):
+    question: str
+    agent_output: dict
+    final: str
+
+# 2) 에이전트를 노드 함수 안에서 호출
+def call_agent(state: State):
     result = weather_agent.invoke(
-        {<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: state[<span class="str">"question"</span>]}]}
+        {"messages": [{"role": "user", "content": state["question"]}]}
     )
-    <span class="kw">return</span> {<span class="str">"agent_output"</span>: result}
+    return {"agent_output": result}
 
-<span class="kw">def</span> <span class="fn">summarize</span>(state: State):
-    last = state[<span class="str">"agent_output"</span>][<span class="str">"messages"</span>][<span class="num">-1</span>].content
-    <span class="kw">return</span> {<span class="str">"final"</span>: <span class="fn">f</span><span class="str">"[요약] {last}"</span>}
+def summarize(state: State):
+    last = state["agent_output"]["messages"][-1].content
+    return {"final": f"[요약] {last}"}</template>
+        <template data-step>def call_agent(state: State):
+    result = weather_agent.invoke(
+        {"messages": [{"role": "user", "content": state["question"]}]}
+    )
+    return {"agent_output": result}
+
+def summarize(state: State):
+    last = state["agent_output"]["messages"][-1].content
+    return {"final": f"[요약] {last}"}
 
 builder = StateGraph(State)
-builder.add_node(<span class="str">"weather_agent"</span>, call_agent)   <span class="cm"># ← 에이전트를 한 노드로</span>
-builder.add_node(<span class="str">"summarize"</span>, summarize)
-builder.add_edge(START, <span class="str">"weather_agent"</span>)
-builder.add_edge(<span class="str">"weather_agent"</span>, <span class="str">"summarize"</span>)
-builder.add_edge(<span class="str">"summarize"</span>, END)
+builder.add_node("weather_agent", call_agent)   # ← 에이전트를 한 노드로
+builder.add_node("summarize", summarize)
+builder.add_edge(START, "weather_agent")
+builder.add_edge("weather_agent", "summarize")
+builder.add_edge("summarize", END)
 graph = builder.compile()
 
-graph.invoke({<span class="str">"question"</span>: <span class="str">"서울 날씨 알려줘"</span>})</code></pre>
+graph.invoke({"question": "서울 날씨 알려줘"})</template>
+      </div>
     </section>
 
     <!-- Slide 7: Wrap-up -->
@@ -1321,6 +1737,59 @@ graph.invoke({<span class="str">"question"</span>: <span class="str">"서울 날
   });
 
   goTo(0);
+</script>
+
+<script type="module">
+  import { createHighlighter } from 'shiki';
+  import { codeToKeyedTokens, createMagicMoveMachine } from 'shiki-magic-move/core';
+  import { MagicMoveRenderer } from 'shiki-magic-move/renderer';
+
+  const THEME = 'github-dark';
+  const blocks = Array.from(document.querySelectorAll('.magic-code'));
+  if (blocks.length) {
+    const langs = [...new Set(blocks.map(b => b.dataset.lang || 'python'))];
+    const highlighter = await createHighlighter({ themes: [THEME], langs });
+
+    for (const container of blocks) {
+      const lang = container.dataset.lang || 'python';
+      const steps = Array.from(container.querySelectorAll('template[data-step]'))
+        .map(t => t.innerHTML.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trimEnd());
+      if (!steps.length) continue;
+
+      const mount = container.querySelector('.magic-code-mount');
+      const counter = container.querySelector('.code-step-counter');
+      const prevBtn = container.querySelector('[data-dir="prev"]');
+      const nextBtn = container.querySelector('[data-dir="next"]');
+
+      const renderer = new MagicMoveRenderer(mount, {
+        duration: 900,
+        delayMove: 0.15,
+        delayLeave: 0,
+        delayEnter: 0.45,
+        stagger: 2,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      });
+      renderer.setCssVariables();
+      const machine = createMagicMoveMachine(
+        code => codeToKeyedTokens(highlighter, code, { lang, theme: THEME })
+      );
+      let idx = 0;
+
+      function render(i, animated) {
+        const { current, previous } = machine.commit(steps[i]);
+        if (animated) renderer.replace(previous);
+        renderer.render(current);
+        counter.textContent = `${i + 1} / ${steps.length}`;
+        prevBtn.disabled = i === 0;
+        nextBtn.disabled = i === steps.length - 1;
+      }
+
+      render(0, false);
+
+      prevBtn.addEventListener('click', () => { if (idx > 0) { idx--; render(idx, true); } });
+      nextBtn.addEventListener('click', () => { if (idx < steps.length - 1) { idx++; render(idx, true); } });
+    }
+  }
 </script>
 </body>
 </html>
