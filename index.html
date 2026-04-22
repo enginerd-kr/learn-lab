@@ -415,6 +415,282 @@ graph.add_edge(<span class="str">"agent"</span>, <span class="str">"tool"</span>
       </div>
     </section>
 
+    <!-- Slide: LangChain 섹션 타이틀 -->
+    <section class="slide">
+      <div class="hero-icon">🔗</div>
+      <h1>LangChain 기초</h1>
+      <p class="subtitle">Prompt · Model · Output Parser — LLM 앱의 3대 빌딩 블록</p>
+
+      <div class="cards" style="margin-top:24px;">
+        <div class="card">
+          <h3>📝 Prompt</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            변수 치환·역할별 메시지로 <b>재사용 가능한 프롬프트</b> 구성
+          </p>
+        </div>
+        <div class="card">
+          <h3>🤖 Model</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            OpenAI·Gemini 등 <b>Chat Model</b>을 동일한 인터페이스로 호출
+          </p>
+        </div>
+        <div class="card">
+          <h3>📦 Output Parser</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            문자열 응답을 <b>구조화된 데이터</b>(dict, Pydantic)로 변환
+          </p>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:32px;font-size:18px;color:var(--muted);">
+        이어지는 슬라이드에서 <b>영화 리뷰 → JSON</b> 예제를 세 단계로 완성해봅니다.
+      </p>
+    </section>
+
+    <!-- Slide: Prompt Template -->
+    <section class="slide">
+      <h2>Prompt Template 예제</h2>
+      <p class="subtitle">재사용 가능한 프롬프트 — 변수 치환 + 메시지 구조화</p>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>📝 ChatPromptTemplate</h3>
+          <ul>
+            <li>System / User / Assistant <b>역할별 메시지</b>를 구성</li>
+            <li><code>{변수}</code> 플레이스홀더를 <code>invoke</code> 시 채움</li>
+            <li><code>MessagesPlaceholder</code>로 대화 이력 주입 가능</li>
+            <li>모델과 파이프(<code>|</code>)로 바로 체인 구성</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🧭 언제 쓰나?</h3>
+          <ul>
+            <li>같은 지시문을 <b>여러 입력</b>에 반복 적용할 때</li>
+            <li>시스템 프롬프트를 고정하고 사용자 입력만 바꿀 때</li>
+            <li>few-shot 예시·히스토리를 구조적으로 끼워넣을 때</li>
+          </ul>
+        </div>
+      </div>
+
+      <p style="font-size:15px;color:var(--muted);margin-top:16px;">
+        🎬 <b>예제 시나리오</b> — 영화 리뷰를 분석해 <code>{sentiment, summary, keywords}</code> JSON으로 추출하는
+        체인을 <b>3단계(프롬프트 → 모델 → 파서)</b>에 걸쳐 완성해봅니다. 이번 슬라이드는 <b>1단계: 프롬프트</b>.
+      </p>
+
+      <pre style="min-height:340px;"><code><span class="kw">from</span> langchain_core.prompts <span class="kw">import</span> ChatPromptTemplate
+
+<span class="cm"># 1) 리뷰 분석용 프롬프트 — 출력 형식을 시스템 프롬프트에 명시</span>
+prompt = ChatPromptTemplate.from_messages([
+    (<span class="str">"system"</span>,
+     <span class="str">"너는 영화 리뷰 분석가야. 아래 JSON 스키마로만 답해.\n"</span>
+     <span class="str">"{{\"sentiment\": \"positive|negative|neutral\", "</span>
+     <span class="str">"\"summary\": str, \"keywords\": [str]}}"</span>),
+    (<span class="str">"user"</span>, <span class="str">"다음 리뷰를 분석해줘:\n{review}"</span>),
+])
+
+<span class="cm"># 프롬프트만 먼저 확인 (모델/파서는 다음 슬라이드에서 연결)</span>
+prompt.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})</code></pre>
+    </section>
+
+    <!-- Slide: LangChain 모델 선언 -->
+    <section class="slide">
+      <h2>LangChain 모델 선언 예제</h2>
+      <p class="subtitle">Provider별 Chat Model 초기화 — OpenAI · Gemini</p>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="col-title chain">🟢 OpenAI</div>
+          <p style="font-size:15px;color:var(--muted);margin-bottom:10px;">
+            <code>langchain-openai</code> 패키지 설치 후
+            <code>OPENAI_API_KEY</code> 환경변수 설정.
+          </p>
+          <pre><code><span class="cm"># pip install -U langchain-openai</span>
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+
+llm = ChatOpenAI(
+    model=<span class="str">"gpt-4o-mini"</span>,
+    temperature=<span class="num">0</span>,
+)
+
+llm.invoke([(<span class="str">"user"</span>, <span class="str">"안녕!"</span>)])</code></pre>
+        </div>
+
+        <div class="card">
+          <div class="col-title graph">🔵 Gemini (Google)</div>
+          <p style="font-size:15px;color:var(--muted);margin-bottom:10px;">
+            <code>langchain-google-genai</code> 패키지 설치 후
+            <code>GOOGLE_API_KEY</code> 환경변수 설정.
+          </p>
+          <pre><code><span class="cm"># pip install -U langchain-google-genai</span>
+<span class="kw">from</span> langchain_google_genai <span class="kw">import</span> ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(
+    model=<span class="str">"gemini-2.0-flash"</span>,
+    temperature=<span class="num">0</span>,
+)
+
+llm.invoke([(<span class="str">"user"</span>, <span class="str">"안녕!"</span>)])</code></pre>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3>🧩 공통 인터페이스 — <code>init_chat_model</code></h3>
+        <p style="font-size:16px;color:var(--muted);margin-bottom:10px;">
+          Provider 문자열만 바꿔 동일한 코드로 여러 모델을 전환할 수 있습니다.
+        </p>
+        <pre><code><span class="kw">from</span> langchain.chat_models <span class="kw">import</span> init_chat_model
+
+llm = init_chat_model(<span class="str">"openai:gpt-4o-mini"</span>)
+<span class="cm"># 또는</span>
+llm = init_chat_model(<span class="str">"google_genai:gemini-2.0-flash"</span>)</code></pre>
+      </div>
+
+      <p style="font-size:15px;color:var(--muted);margin-top:16px;">
+        🎬 <b>2단계: 모델</b> — 앞 슬라이드에서 만든 <code>prompt</code>에 이 <code>llm</code>을 파이프로 이어 붙이면
+        프롬프트 + LLM 체인이 완성됩니다. 다음 슬라이드에서 JSON 파서까지 연결합니다.
+      </p>
+
+      <pre style="min-height:220px;"><code><span class="cm"># 앞 슬라이드의 prompt 를 그대로 사용</span>
+llm = ChatOpenAI(model=<span class="str">"gpt-4o-mini"</span>, temperature=<span class="num">0</span>)
+chain = prompt | llm
+
+chain.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
+<span class="cm"># → AIMessage(content='{"sentiment": "neutral", ...}')  ← 아직 문자열</span></code></pre>
+    </section>
+
+    <!-- Slide: JSON Output Parser -->
+    <section class="slide">
+      <h2>JsonOutputParser 예제</h2>
+      <p class="subtitle">LLM의 문자열 응답을 <b>dict</b>로 파싱 — 체인 최종 단계</p>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>🧪 무엇을 해주나?</h3>
+          <ul>
+            <li>모델 출력에서 <b>JSON 블록을 추출 후 <code>dict</code>로 파싱</b></li>
+            <li>마크다운 코드펜스(```json ... ```)도 허용</li>
+            <li>Pydantic 모델을 주면 <b>스키마 검증</b>까지 수행</li>
+            <li>스트리밍 시 부분 JSON도 점진적으로 파싱</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🔗 전체 체인 조립</h3>
+          <ul>
+            <li><code>prompt | model | parser</code> — 3단계 파이프라인</li>
+            <li>입력(<code>{review}</code>) → 메시지 → 응답 → <b>dict</b></li>
+            <li>파서의 <code>get_format_instructions()</code>를 프롬프트에 주입하면 더 안정적</li>
+          </ul>
+        </div>
+      </div>
+
+      <pre style="min-height:340px;"><code><span class="kw">from</span> langchain_core.output_parsers <span class="kw">import</span> JsonOutputParser
+<span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field
+
+<span class="cm"># 1) 결과 스키마 정의 (선택)</span>
+<span class="kw">class</span> <span class="fn">ReviewAnalysis</span>(BaseModel):
+    sentiment: <span class="fn">str</span> = Field(description=<span class="str">"positive | negative | neutral"</span>)
+    summary: <span class="fn">str</span>
+    keywords: <span class="fn">list</span>[<span class="fn">str</span>]
+
+parser = JsonOutputParser(pydantic_object=ReviewAnalysis)
+
+<span class="cm"># 2) 앞 슬라이드의 prompt 와 llm 을 그대로 사용 → 파서까지 파이프 연결</span>
+llm = ChatOpenAI(model=<span class="str">"gpt-4o-mini"</span>, temperature=<span class="num">0</span>)
+chain = prompt | llm | parser
+
+result = chain.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
+<span class="cm"># → {"sentiment": "neutral", "summary": "...", "keywords": [...]}</span>
+<span class="fn">print</span>(result[<span class="str">"sentiment"</span>])</code></pre>
+    </section>
+
+    <!-- Slide: with_structured_output -->
+    <section class="slide">
+      <h2>with_structured_output 으로 바꿔보기</h2>
+      <p class="subtitle">파서 없이 모델이 직접 <b>Pydantic 객체</b>를 반환하도록</p>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>✨ 무엇이 달라지나?</h3>
+          <ul>
+            <li>모델이 내부적으로 <b>tool/function calling</b> 또는 JSON 모드를 사용</li>
+            <li>출력이 <b>Pydantic 인스턴스</b>(또는 dict)로 바로 반환</li>
+            <li>프롬프트에 포맷 지침을 적지 않아도 스키마가 강제됨</li>
+            <li><code>JsonOutputParser</code> 불필요 → 체인이 더 단순</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>⚖️ Parser vs Structured Output</h3>
+          <ul>
+            <li><span class="badge">Parser</span> 어떤 모델에서도 동작 (문자열 기반)</li>
+            <li><span class="badge purple">Structured</span> 스키마 준수율↑, 코드 간결</li>
+            <li>구조화 스펙이 단단하면 Structured 권장</li>
+          </ul>
+        </div>
+      </div>
+
+      <pre style="min-height:340px;"><code><span class="kw">from</span> langchain_openai <span class="kw">import</span> ChatOpenAI
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel, Field
+
+<span class="cm"># 1) 앞 슬라이드와 동일한 스키마</span>
+<span class="kw">class</span> <span class="fn">ReviewAnalysis</span>(BaseModel):
+    sentiment: <span class="fn">str</span> = Field(description=<span class="str">"positive | negative | neutral"</span>)
+    summary: <span class="fn">str</span>
+    keywords: <span class="fn">list</span>[<span class="fn">str</span>]
+
+<span class="cm"># 2) 모델 자체에 스키마를 바인딩 — 파서 불필요</span>
+llm = ChatOpenAI(model=<span class="str">"gpt-4o-mini"</span>, temperature=<span class="num">0</span>)
+structured_llm = llm.with_structured_output(ReviewAnalysis)
+
+<span class="cm"># 3) prompt 는 3페이지 것을 그대로 재사용</span>
+chain = prompt | structured_llm
+
+result = chain.invoke({<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
+<span class="cm"># → ReviewAnalysis(sentiment='neutral', summary='...', keywords=[...])</span>
+<span class="fn">print</span>(result.sentiment, result.keywords)</code></pre>
+    </section>
+
+    <!-- Slide: LangGraph 섹션 타이틀 -->
+    <section class="slide">
+      <div class="hero-icon">🕸️</div>
+      <h1>LangGraph 기초</h1>
+      <p class="subtitle">상태(State) 기반 그래프로 <b>순환·분기·사람 개입</b>이 있는 워크플로우 설계</p>
+
+      <div class="cards" style="margin-top:24px;">
+        <div class="card">
+          <h3>🗂️ State · Node · Graph</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            공유 상태 위에서 노드들이 실행되고, 엣지가 다음 단계를 결정
+          </p>
+        </div>
+        <div class="card">
+          <h3>🔀 Conditional Edge</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            노드 반환값·State 값에 따라 <b>다음 노드를 동적으로 분기</b>
+          </p>
+        </div>
+        <div class="card">
+          <h3>⏸ Interrupt</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            민감 동작 전 <b>사람 승인·편집</b>을 받아 재개하는 Human-in-the-loop
+          </p>
+        </div>
+        <div class="card">
+          <h3>💾 Checkpoint</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            스텝마다 상태 스냅샷을 저장해 <b>지속성·재개·시간여행</b>
+          </p>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:32px;font-size:18px;color:var(--muted);">
+        LangChain 컴포넌트를 <b>그래프로 엮어</b> 상태 있는 워크플로우를 만듭니다.
+      </p>
+    </section>
+
     <!-- Slide 3: State, Node, Graph -->
     <section class="slide">
       <h2>핵심 구성: State · Node · Graph</h2>
@@ -429,7 +705,8 @@ graph.add_edge(<span class="str">"agent"</span>, <span class="str">"tool"</span>
           </p>
           <ul>
             <li>각 노드는 State를 입력으로 받아 일부를 업데이트해 반환</li>
-            <li>필드마다 <b>reducer</b>로 병합 전략 지정 (예: <code>add_messages</code>)</li>
+            <li>필드마다 <b>병합 방식</b>을 지정 — 덮어쓰기(기본) / 이어붙이기 등
+              <br><span style="font-size:14px;color:var(--muted);">※ 이 "병합 규칙"을 LangGraph에서는 <b>reducer</b>라 부름 (예: 메시지 이력을 누적하는 <code>add_messages</code>)</span></li>
           </ul>
         </div>
 
@@ -458,16 +735,17 @@ graph.add_edge(<span class="str">"agent"</span>, <span class="str">"tool"</span>
         </div>
       </div>
 
-      <pre><code><span class="kw">from</span> typing <span class="kw">import</span> TypedDict, Annotated
+      <pre style="min-height:320px;"><code><span class="kw">from</span> typing <span class="kw">import</span> TypedDict
 <span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
-<span class="kw">from</span> langgraph.graph.message <span class="kw">import</span> add_messages
 
+<span class="cm"># 앞 슬라이드의 chain = prompt | structured_llm 을 그대로 재사용</span>
 <span class="kw">class</span> <span class="fn">State</span>(TypedDict):
-    messages: Annotated[<span class="fn">list</span>, add_messages]   <span class="cm"># reducer</span>
-    step: <span class="fn">int</span>
+    review: <span class="fn">str</span>
+    analysis: ReviewAnalysis | <span class="kw">None</span>
 
 <span class="kw">def</span> <span class="fn">agent</span>(state: State):
-    <span class="kw">return</span> {<span class="str">"messages"</span>: [llm.invoke(state[<span class="str">"messages"</span>])], <span class="str">"step"</span>: state[<span class="str">"step"</span>] + <span class="num">1</span>}
+    result = chain.invoke({<span class="str">"review"</span>: state[<span class="str">"review"</span>]})
+    <span class="kw">return</span> {<span class="str">"analysis"</span>: result}
 
 builder = StateGraph(State)
 builder.add_node(<span class="str">"agent"</span>, agent)
@@ -475,8 +753,51 @@ builder.add_edge(START, <span class="str">"agent"</span>)
 builder.add_edge(<span class="str">"agent"</span>, END)
 graph = builder.compile()
 
-<span class="cm"># 채팅 메시지 인터페이스로 호출</span>
-graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"hi"</span>)]})</code></pre>
+graph.invoke(input={<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>})
+<span class="cm"># → {"review": "...", "analysis": ReviewAnalysis(sentiment='neutral', ...)}</span></code></pre>
+    </section>
+
+    <!-- Slide: Conditional Edge -->
+    <section class="slide">
+      <h2>Conditional Edge (조건부 분기)</h2>
+      <p class="subtitle">노드 반환값에 따라 <b>다음 노드를 동적으로 결정</b></p>
+
+      <div class="diagram">
+        <div class="node start">START</div>
+        <div class="arrow">→</div>
+        <div class="node">agent</div>
+        <div class="arrow">→</div>
+        <div class="node" style="border-color:var(--warning);background:rgba(251,191,36,0.15);">route?</div>
+        <div class="arrow">→</div>
+        <div class="node">reply_positive</div>
+        <div class="node">reply_negative</div>
+        <div class="arrow">→</div>
+        <div class="node end">END</div>
+      </div>
+
+      <pre style="min-height:320px;"><code><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+
+<span class="cm"># 앞 페이지의 State / agent 를 그대로 사용</span>
+<span class="kw">def</span> <span class="fn">reply_positive</span>(state: State): <span class="kw">return</span> {}
+<span class="kw">def</span> <span class="fn">reply_negative</span>(state: State): <span class="kw">return</span> {}
+
+<span class="cm"># 라우팅 함수 — 다음 노드 이름(문자열)을 반환</span>
+<span class="kw">def</span> <span class="fn">route</span>(state: State) -> <span class="fn">str</span>:
+    <span class="kw">if</span> state[<span class="str">"analysis"</span>].sentiment == <span class="str">"positive"</span>:
+        <span class="kw">return</span> <span class="str">"reply_positive"</span>
+    <span class="kw">return</span> <span class="str">"reply_negative"</span>
+
+builder = StateGraph(State)
+builder.add_node(<span class="str">"agent"</span>, agent)
+builder.add_node(<span class="str">"reply_positive"</span>, reply_positive)
+builder.add_node(<span class="str">"reply_negative"</span>, reply_negative)
+
+builder.add_edge(START, <span class="str">"agent"</span>)
+builder.add_conditional_edges(<span class="str">"agent"</span>, route)   <span class="cm"># ← 분기</span>
+builder.add_edge(<span class="str">"reply_positive"</span>, END)
+builder.add_edge(<span class="str">"reply_negative"</span>, END)
+
+graph = builder.compile()</code></pre>
     </section>
 
     <!-- Slide 4: Interrupt -->
@@ -490,8 +811,6 @@ graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"us
         <div class="node">agent</div>
         <div class="arrow">→</div>
         <div class="node interrupt">⏸ human_review</div>
-        <div class="arrow">→</div>
-        <div class="node">tool</div>
         <div class="arrow">→</div>
         <div class="node end">END</div>
       </div>
@@ -517,24 +836,40 @@ graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"us
         </div>
       </div>
 
-      <pre><code><span class="kw">from</span> langgraph.types <span class="kw">import</span> interrupt, Command
+      <pre style="min-height:320px;"><code><span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+<span class="kw">from</span> langgraph.types <span class="kw">import</span> interrupt, Command
 
-<span class="kw">def</span> <span class="fn">human_review</span>(state):
-    answer = interrupt({<span class="str">"question"</span>: <span class="str">"이 툴을 실행해도 될까요?"</span>})
-    <span class="kw">return</span> {<span class="str">"approved"</span>: answer == <span class="str">"yes"</span>}
+<span class="cm"># 9페이지 그래프 + human_review 노드 추가</span>
+<span class="kw">def</span> <span class="fn">human_review</span>(state: State):
+    edited = interrupt({
+        <span class="str">"question"</span>: <span class="str">"분석 결과를 확인해 주세요. 수정할 부분이 있나요?"</span>,
+        <span class="str">"analysis"</span>: state[<span class="str">"analysis"</span>].model_dump(),
+    })
+    <span class="kw">return</span> {<span class="str">"analysis"</span>: ReviewAnalysis(**edited)}
 
-<span class="cm"># 1) 일단 실행 → interrupt 에서 멈춤</span>
-graph.invoke(
-    input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"파일 삭제해줘"</span>)]},
-    config=cfg,
-)
+builder = StateGraph(State)
+builder.add_node(<span class="str">"agent"</span>, agent)
+builder.add_node(<span class="str">"human_review"</span>, human_review)
+builder.add_edge(START, <span class="str">"agent"</span>)
+builder.add_edge(<span class="str">"agent"</span>, <span class="str">"human_review"</span>)
+builder.add_edge(<span class="str">"human_review"</span>, END)
+graph = builder.compile(checkpointer=InMemorySaver())
 
-<span class="cm"># 2) 사람이 확인한 값을 주입해 재개</span>
-graph.invoke(input=Command(resume=<span class="str">"yes"</span>), config=cfg)</code></pre>
+cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"review-1"</span>}}
+
+<span class="cm"># 1) 실행 → human_review 의 interrupt 에서 멈춤</span>
+graph.invoke(input={<span class="str">"review"</span>: <span class="str">"연출은 좋았지만 각본이 아쉬웠다."</span>}, config=cfg)
+
+<span class="cm"># 2) 사람이 확인·수정한 값을 주입해 재개</span>
+graph.invoke(input=Command(resume={
+    <span class="str">"sentiment"</span>: <span class="str">"negative"</span>,
+    <span class="str">"summary"</span>: <span class="str">"각본의 약점이 두드러진 리뷰."</span>,
+    <span class="str">"keywords"</span>: [<span class="str">"각본"</span>, <span class="str">"연출"</span>],
+}), config=cfg)</code></pre>
     </section>
 
     <!-- Slide 5: Checkpoint -->
-    <section class="slide">
+    <section class="slide" style="justify-content:flex-start;">
       <h2>Checkpoint (상태 저장과 재개)</h2>
       <p class="subtitle">매 단계마다 State 스냅샷을 저장 → 중단·복구·시간여행이 가능</p>
 
@@ -569,19 +904,51 @@ graph.invoke(input=Command(resume=<span class="str">"yes"</span>), config=cfg)</
         </div>
       </div>
 
-      <pre><code><span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> InMemorySaver
+      <pre style="min-height:320px;"><code><span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> InMemorySaver
 
 checkpointer = InMemorySaver()
 graph = builder.compile(checkpointer=checkpointer)
 
 cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"user-42"</span>}}
 
-graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"안녕, 내 이름은 지호야"</span>)]}, config=cfg)
-graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"내 이름 기억해?"</span>)]}, config=cfg)  <span class="cm"># 이어짐</span>
+graph.invoke(input={<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"안녕, 내 이름은 지호야"</span>}]}, config=cfg)
+graph.invoke(input={<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"내 이름 기억해?"</span>}]}, config=cfg)  <span class="cm"># 이어짐</span>
 
 <span class="cm"># 과거 상태 확인 / 시간여행</span>
 <span class="kw">for</span> snap <span class="kw">in</span> graph.get_state_history(cfg):
     <span class="fn">print</span>(snap.values, snap.next)</code></pre>
+    </section>
+
+    <!-- Slide: Agent 섹션 타이틀 -->
+    <section class="slide">
+      <div class="hero-icon">🤖</div>
+      <h1>Agent</h1>
+      <p class="subtitle">LLM이 스스로 <b>툴을 선택·호출</b>하며 목표를 달성하는 루프</p>
+
+      <div class="cards" style="margin-top:24px;">
+        <div class="card">
+          <h3>🔁 ReAct 루프</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            <b>Reason → Act → Observe</b> 를 반복하며 툴 결과를 보고 다음 행동을 결정
+          </p>
+        </div>
+        <div class="card">
+          <h3>🧰 Tool Calling</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            함수 시그니처를 모델에 제공 → 모델이 <b>호출할 툴·인자</b>를 JSON으로 지정
+          </p>
+        </div>
+        <div class="card">
+          <h3>🎁 create_agent</h3>
+          <p style="font-size:16px;color:var(--muted);">
+            모델 + 툴만 주면 위 루프 그래프를 <b>자동으로 조립</b>해주는 프리셋
+          </p>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:32px;font-size:18px;color:var(--muted);">
+        앞서 본 State · Graph · Checkpoint · Interrupt 가 모두 <b>하나의 에이전트</b>에 녹아듭니다.
+      </p>
     </section>
 
     <!-- Slide 6: create_agent -->
@@ -596,7 +963,7 @@ graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"us
             <li>내부적으로 <b>agent ↔ tools</b> 를 오가는 ReAct 루프 그래프를 자동 생성</li>
             <li>메시지 상태(<code>messages</code>)와 <code>add_messages</code> reducer를 기본 제공</li>
             <li><code>checkpointer</code> 전달 시 <b>대화 지속성</b> 바로 사용</li>
-            <li><code>interrupt_before=["tools"]</code> 로 툴 실행 전 사람 승인도 원샷 설정</li>
+            <li><code>HumanInTheLoopMiddleware</code> 로 툴별 <b>approve·edit·reject</b> 승인 설정</li>
             <li>반환값은 일반 <code>CompiledGraph</code> — 커스터마이즈·확장 가능</li>
           </ul>
         </div>
@@ -614,9 +981,11 @@ graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"us
         </div>
       </div>
 
-      <pre><code><span class="kw">from</span> langgraph.prebuilt <span class="kw">import</span> create_react_agent
+      <pre style="min-height:400px;"><code><span class="cm"># LangChain v1 — create_react_agent 는 deprecated</span>
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+<span class="kw">from</span> langchain.agents.middleware <span class="kw">import</span> HumanInTheLoopMiddleware
+<span class="kw">from</span> langchain.tools <span class="kw">import</span> tool
 <span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> InMemorySaver
-<span class="kw">from</span> langchain_core.tools <span class="kw">import</span> tool
 
 <span class="cm"># 1) 툴 정의</span>
 <span class="kw">@tool</span>
@@ -624,32 +993,120 @@ graph.invoke(input={<span class="str">"messages"</span>: [(<span class="str">"us
     <span class="str">"""도시의 날씨를 반환."""</span>
     <span class="kw">return</span> <span class="fn">f</span><span class="str">"{city}: 맑음 22°C"</span>
 
-<span class="cm"># 2) 에이전트 생성 (모델 + 툴 + 프롬프트 + 체크포인트 + 인터럽트)</span>
-agent = create_react_agent(
+<span class="cm"># 2) 에이전트 생성 (모델 + 툴 + 시스템 프롬프트 + 체크포인트 + HITL 미들웨어)</span>
+agent = create_agent(
     model=<span class="str">"anthropic:claude-sonnet-4-6"</span>,
     tools=[get_weather],
-    prompt=<span class="str">"너는 친절한 한국어 비서야."</span>,
+    system_prompt=<span class="str">"너는 친절한 한국어 비서야."</span>,
+    middleware=[
+        HumanInTheLoopMiddleware(
+            interrupt_on={<span class="str">"get_weather"</span>: <span class="kw">True</span>},   <span class="cm"># 툴 실행 전 사람 승인</span>
+        ),
+    ],
     checkpointer=InMemorySaver(),
-    interrupt_before=[<span class="str">"tools"</span>],   <span class="cm"># 툴 실행 전 사람 승인</span>
 )
 
-<span class="cm"># 3) 채팅 메시지 인터페이스로 호출</span>
+<span class="cm"># 3) 채팅 메시지 인터페이스로 호출 (v2: 결과는 GraphOutput)</span>
 cfg = {<span class="str">"configurable"</span>: {<span class="str">"thread_id"</span>: <span class="str">"user-42"</span>}}
-agent.invoke(
-    input={<span class="str">"messages"</span>: [(<span class="str">"user"</span>, <span class="str">"서울 날씨 알려줘"</span>)]},
+result = agent.invoke(
+    input={<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: <span class="str">"서울 날씨 알려줘"</span>}]},
     config=cfg,
-)</code></pre>
+    version=<span class="str">"v2"</span>,
+)
+<span class="fn">print</span>(result.interrupts)   <span class="cm"># 승인 대기 중인 action_requests</span></code></pre>
+    </section>
+
+    <!-- Slide: 그래프 안의 에이전트 -->
+    <section class="slide">
+      <h2>그래프 안에서 Agent 호출하기</h2>
+      <p class="subtitle"><code>create_react_agent</code> 결과는 일반 Runnable — <b>노드 하나</b>로 꽂을 수 있음</p>
+
+      <div class="diagram">
+        <div class="node start">START</div>
+        <div class="arrow">→</div>
+        <div class="node">plan</div>
+        <div class="arrow">→</div>
+        <div class="node" style="border-color:var(--accent-2);">🤖 weather_agent</div>
+        <div class="arrow">→</div>
+        <div class="node">summarize</div>
+        <div class="arrow">→</div>
+        <div class="node end">END</div>
+      </div>
+
+      <pre style="min-height:360px;"><code><span class="kw">from</span> typing <span class="kw">import</span> TypedDict
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+
+<span class="cm"># 1) 앞 슬라이드의 에이전트를 그대로 사용</span>
+weather_agent = create_agent(
+    model=<span class="str">"anthropic:claude-sonnet-4-6"</span>,
+    tools=[get_weather],
+    system_prompt=<span class="str">"너는 친절한 한국어 비서야."</span>,
+)
+
+<span class="kw">class</span> <span class="fn">State</span>(TypedDict):
+    question: <span class="fn">str</span>
+    agent_output: <span class="fn">dict</span>
+    final: <span class="fn">str</span>
+
+<span class="cm"># 2) 에이전트를 노드 함수 안에서 호출</span>
+<span class="kw">def</span> <span class="fn">call_agent</span>(state: State):
+    result = weather_agent.invoke(
+        {<span class="str">"messages"</span>: [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: state[<span class="str">"question"</span>]}]}
+    )
+    <span class="kw">return</span> {<span class="str">"agent_output"</span>: result}
+
+<span class="kw">def</span> <span class="fn">summarize</span>(state: State):
+    last = state[<span class="str">"agent_output"</span>][<span class="str">"messages"</span>][<span class="num">-1</span>].content
+    <span class="kw">return</span> {<span class="str">"final"</span>: <span class="fn">f</span><span class="str">"[요약] {last}"</span>}
+
+builder = StateGraph(State)
+builder.add_node(<span class="str">"weather_agent"</span>, call_agent)   <span class="cm"># ← 에이전트를 한 노드로</span>
+builder.add_node(<span class="str">"summarize"</span>, summarize)
+builder.add_edge(START, <span class="str">"weather_agent"</span>)
+builder.add_edge(<span class="str">"weather_agent"</span>, <span class="str">"summarize"</span>)
+builder.add_edge(<span class="str">"summarize"</span>, END)
+graph = builder.compile()
+
+graph.invoke({<span class="str">"question"</span>: <span class="str">"서울 날씨 알려줘"</span>})</code></pre>
     </section>
 
     <!-- Slide 7: Wrap-up -->
     <section class="slide">
       <h2>한 장 요약</h2>
-      <p class="subtitle">LangGraph = State + Node + Graph + Checkpoint + Interrupt ( + create_agent 프리셋)</p>
+      <p class="subtitle">LangChain(빌딩 블록) → LangGraph(상태 그래프) → Agent(ReAct 루프)</p>
 
       <div class="cards">
         <div class="card">
+          <h3>🔗 LangChain</h3>
+          <ul>
+            <li><b>Prompt</b> — 변수 치환·역할별 메시지</li>
+            <li><b>Model</b> — OpenAI·Gemini 등 통합 인터페이스</li>
+            <li><b>Output Parser</b> — JsonOutputParser</li>
+            <li><b>Structured Output</b> — 모델에 Pydantic 스키마 바인딩</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>🕸️ LangGraph</h3>
+          <ul>
+            <li><b>State · Node · Graph</b> — 상태 머신으로 설계</li>
+            <li><b>Conditional Edge</b> — 반환값으로 동적 분기</li>
+            <li><b>Interrupt</b> — 사람 승인·편집 후 재개</li>
+            <li><b>Checkpoint</b> — 지속성·재개·시간여행</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>🤖 Agent</h3>
+          <ul>
+            <li><b>ReAct 루프</b> — Reason → Act → Observe</li>
+            <li><b>Tool Calling</b> — 모델이 툴·인자 선택</li>
+            <li><b>create_agent</b> (langchain.agents) — 모델+툴만 주면 그래프 자동 조립</li>
+            <li>필요 시 <code>StateGraph</code>로 커스터마이즈</li>
+          </ul>
+        </div>
+        <div class="card">
           <h3>🧠 사고 모델</h3>
-          <p style="font-size:17px;">
+          <p style="font-size:16px;">
             "여러 단계의 LLM/툴 호출을 <b>상태 머신</b>처럼 설계하자."
             각 노드는 상태를 조금씩 바꾸고, 엣지가 다음 단계를 정한다.
           </p>
@@ -657,7 +1114,7 @@ agent.invoke(
         <div class="card">
           <h3>🛠 언제 쓰면 좋은가</h3>
           <ul>
-            <li>ReAct 스타일 툴 호출 루프</li>
+            <li>툴 호출이 있는 챗 에이전트</li>
             <li>멀티 에이전트 협업 (Planner/Worker/Critic)</li>
             <li>사람 승인이 필요한 자동화</li>
             <li>오래 걸리는 작업의 중단·재개</li>
@@ -666,9 +1123,9 @@ agent.invoke(
         <div class="card">
           <h3>📚 더 읽을거리</h3>
           <ul>
-            <li>LangGraph 공식 문서: Concepts / Tutorials</li>
-            <li>Human-in-the-loop 패턴 가이드</li>
-            <li>Persistence & Time Travel 예제</li>
+            <li>LangChain: Prompts / Output Parsers / Structured Output</li>
+            <li>LangGraph: Concepts / Human-in-the-loop / Persistence</li>
+            <li>Prebuilt: <code>create_react_agent</code> 가이드</li>
           </ul>
         </div>
       </div>

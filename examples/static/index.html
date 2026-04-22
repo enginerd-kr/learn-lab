@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LangGraph + Chain + Interrupt Demo</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-2: #a78bfa;
+    --warning: #fbbf24;
+    --success: #34d399;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  .container { max-width: 820px; margin: 0 auto; }
+  h1 {
+    font-size: 32px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle { color: var(--muted); margin-bottom: 32px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--surface-2);
+    border-radius: 14px; padding: 24px; margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 18px; margin-bottom: 14px; color: var(--accent);
+    display: flex; align-items: center; gap: 8px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 6px; }
+  input, textarea {
+    width: 100%; background: var(--bg); color: var(--text);
+    border: 1px solid var(--surface-2); border-radius: 8px;
+    padding: 10px 12px; font: inherit; font-size: 15px;
+  }
+  textarea { resize: vertical; min-height: 90px; }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b1220; border: none; border-radius: 8px;
+    padding: 10px 18px; font-weight: 700; font-size: 14px;
+    cursor: pointer; margin-top: 12px;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.ghost {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--surface-2);
+  }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge.wait { background: rgba(251,191,36,0.15); color: var(--warning); }
+  .badge.done { background: rgba(52,211,153,0.15); color: var(--success); }
+  pre {
+    background: #0b1220; border: 1px solid var(--surface-2);
+    border-radius: 8px; padding: 14px; overflow-x: auto;
+    font-size: 13px; font-family: "SF Mono", "Fira Code", monospace;
+    color: #e2e8f0;
+  }
+  .hidden { display: none; }
+  .diagram {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .node {
+    padding: 8px 14px; border: 1px solid var(--surface-2);
+    border-radius: 8px; background: var(--surface);
+  }
+  .node.active { border-color: var(--warning); color: var(--warning); }
+  .node.done { border-color: var(--success); color: var(--success); }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🕸️ LangGraph + Chain + Interrupt</h1>
+    <p class="subtitle">영화 리뷰를 분석(<b>LangChain 체인</b>)하고 사람이 검토·수정 후 승인(<b>LangGraph interrupt</b>)하는 데모.</p>
+
+    <div class="diagram">
+      <div class="node" id="node-analyze">analyze (chain)</div>
+      <span>→</span>
+      <div class="node" id="node-review">⏸ human_review</div>
+      <span>→</span>
+      <div class="node" id="node-end">END</div>
+    </div>
+
+    <div class="card">
+      <h2>1️⃣ 리뷰 입력</h2>
+      <label>thread_id</label>
+      <input id="thread" value="review-1" />
+      <label>리뷰</label>
+      <textarea id="review">연출은 좋았지만 각본이 아쉬웠다. 배우들의 연기는 훌륭했다.</textarea>
+      <button id="btn-invoke">분석 실행</button>
+    </div>
+
+    <div class="card hidden" id="card-review">
+      <h2>2️⃣ 사람 검토 <span class="badge wait">⏸ interrupted</span></h2>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:10px;" id="review-question"></p>
+      <label>sentiment</label>
+      <input id="sentiment" />
+      <label>summary</label>
+      <textarea id="summary"></textarea>
+      <label>keywords (쉼표 구분)</label>
+      <input id="keywords" />
+      <div class="row">
+        <button id="btn-resume">승인 후 재개</button>
+        <button class="ghost" id="btn-reset">처음부터</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="card-final">
+      <h2>3️⃣ 최종 결과 <span class="badge done">✔ done</span></h2>
+      <pre id="final-json"></pre>
+    </div>
+
+    <div class="card hidden" id="card-debug">
+      <h2>🔎 서버 응답</h2>
+      <pre id="debug"></pre>
+    </div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const btnInvoke = $("btn-invoke");
+  const btnResume = $("btn-resume");
+  const btnReset = $("btn-reset");
+
+  function setNode(stage) {
+    ["node-analyze","node-review","node-end"].forEach(id => $(id).className = "node");
+    if (stage === "review") { $("node-analyze").classList.add("done"); $("node-review").classList.add("active"); }
+    if (stage === "done") { ["node-analyze","node-review","node-end"].forEach(id => $(id).classList.add("done")); }
+  }
+
+  function showDebug(obj) {
+    $("card-debug").classList.remove("hidden");
+    $("debug").textContent = JSON.stringify(obj, null, 2);
+  }
+
+  async function post(path, body) {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  btnInvoke.addEventListener("click", async () => {
+    btnInvoke.disabled = true;
+    $("card-review").classList.add("hidden");
+    $("card-final").classList.add("hidden");
+    try {
+      const data = await post("/invoke", {
+        thread_id: $("thread").value,
+        review: $("review").value,
+      });
+      showDebug(data);
+      if (data.status === "interrupted") {
+        const a = data.payload.analysis;
+        $("review-question").textContent = data.payload.question;
+        $("sentiment").value = a.sentiment;
+        $("summary").value = a.summary;
+        $("keywords").value = (a.keywords || []).join(", ");
+        $("card-review").classList.remove("hidden");
+        setNode("review");
+      } else {
+        $("final-json").textContent = JSON.stringify(data.final, null, 2);
+        $("card-final").classList.remove("hidden");
+        setNode("done");
+      }
+    } catch (e) {
+      showDebug({error: String(e)});
+    } finally {
+      btnInvoke.disabled = false;
+    }
+  });
+
+  btnResume.addEventListener("click", async () => {
+    btnResume.disabled = true;
+    try {
+      const data = await post("/resume", {
+        thread_id: $("thread").value,
+        sentiment: $("sentiment").value,
+        summary: $("summary").value,
+        keywords: $("keywords").value.split(",").map(s => s.trim()).filter(Boolean),
+      });
+      showDebug(data);
+      $("final-json").textContent = JSON.stringify(data.final, null, 2);
+      $("card-final").classList.remove("hidden");
+      setNode("done");
+    } catch (e) {
+      showDebug({error: String(e)});
+    } finally {
+      btnResume.disabled = false;
+    }
+  });
+
+  btnReset.addEventListener("click", () => {
+    $("thread").value = "review-" + Math.floor(Math.random() * 10000);
+    $("card-review").classList.add("hidden");
+    $("card-final").classList.add("hidden");
+    $("card-debug").classList.add("hidden");
+    setNode(null);
+  });
+</script>
+</body>
+</html>
