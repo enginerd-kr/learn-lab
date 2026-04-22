@@ -60,9 +60,14 @@
     border-radius: 14px;
     padding: 24px 26px;
     transition: transform 0.2s ease, border-color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
   }
   .lecture:hover {
     transform: translateY(-4px);
+    border-color: var(--accent);
+  }
+  .lecture:active {
+    transform: translateY(-1px);
     border-color: var(--accent);
   }
   .lecture .tag {
@@ -88,8 +93,33 @@
   footer {
     font-size: 13px;
     color: var(--muted);
+    text-align: center;
+    padding: 0 16px;
   }
   footer a { color: var(--accent); text-decoration: none; }
+
+  .key-hint { display: inline; }
+  .touch-hint { display: none; }
+
+  @media (hover: none) and (pointer: coarse) {
+    .key-hint { display: none; }
+    .touch-hint { display: inline; }
+  }
+
+  @media (max-width: 720px) {
+    body { padding: 56px 18px 80px; gap: 32px; }
+    h1 { font-size: 36px; }
+    .sub { font-size: 16px; margin-top: -20px; }
+    .lectures { grid-template-columns: 1fr; gap: 14px; }
+    .lecture { padding: 20px 22px; border-radius: 12px; }
+    .lecture h2 { font-size: 19px; }
+    .lecture p { font-size: 14px; }
+  }
+
+  @media (max-width: 420px) {
+    body { padding: 40px 14px 64px; }
+    h1 { font-size: 30px; }
+  }
 </style>
 </head>
 <body>
@@ -105,7 +135,9 @@
   </div>
 
   <footer>
-    ← → / Space / Home / End 로 슬라이드 이동 · Source on
+    <span class="key-hint">← → / Space / Home / End 로 슬라이드 이동</span>
+    <span class="touch-hint">좌우 스와이프 또는 하단 버튼으로 슬라이드 이동</span>
+    · Source on
     <a href="https://github.com/enginerd-kr/learn-lab" target="_blank" rel="noreferrer">GitHub</a>
   </footer>
 </body>

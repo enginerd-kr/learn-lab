@@ -21,6 +21,11 @@
  *   - "slides:beforeprev"
  * If a listener calls event.preventDefault(), navigation is skipped.
  * (Used by magic-code.js to consume arrow keys for code stepping.)
+ *
+ * Touch: horizontal swipe on the deck advances slides (same code path as
+ * arrow keys, so magic-code step events fire too). Swipes that start on a
+ * horizontally-scrollable descendant are ignored so users can still scroll
+ * wide code blocks sideways.
  */
 
 function init() {
@@ -101,6 +106,51 @@ function init() {
       goTo(slides.length - 1);
     }
   });
+
+  const deck = document.getElementById('deck') || slides[0]?.parentElement;
+  if (deck) {
+    const SWIPE_MIN = 50;
+    const SWIPE_RATIO = 1.4;
+    let startX = 0, startY = 0, tracking = false;
+
+    function startsOnScrollableRow(target) {
+      let el = target;
+      while (el && el !== deck) {
+        if (el.nodeType === 1) {
+          const style = getComputedStyle(el);
+          const ox = style.overflowX;
+          if ((ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth + 1) {
+            return true;
+          }
+        }
+        el = el.parentElement;
+      }
+      return false;
+    }
+
+    deck.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { tracking = false; return; }
+      const t = e.touches[0];
+      if (startsOnScrollableRow(e.target)) { tracking = false; return; }
+      startX = t.clientX;
+      startY = t.clientY;
+      tracking = true;
+    }, { passive: true });
+
+    deck.addEventListener('touchend', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const t = (e.changedTouches && e.changedTouches[0]);
+      if (!t) return;
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (Math.abs(dx) < SWIPE_MIN) return;
+      if (Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+      if (dx < 0) next(); else prev();
+    }, { passive: true });
+
+    deck.addEventListener('touchcancel', () => { tracking = false; }, { passive: true });
+  }
 
   goTo(0);
 

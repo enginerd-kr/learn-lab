@@ -122,9 +122,11 @@
     border-radius: 10px;
     padding: 18px 20px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     font-size: 15px;
     line-height: 1.6;
     margin-top: 14px;
+    max-width: 100%;
   }
 
   code {
@@ -240,9 +242,43 @@
 
   @media (max-width: 900px) {
     h1 { font-size: 36px; }
-    h2 { font-size: 28px; }
-    p, li { font-size: 16px; }
-    .two-col, .comparison { grid-template-columns: 1fr; }
+    h2 { font-size: 28px; gap: 12px; margin-bottom: 20px; }
+    h2::before { width: 6px; height: 28px; }
+    h3 { font-size: 19px; }
+    p, li { font-size: 16px; line-height: 1.6; }
+    .subtitle { font-size: 18px; margin-bottom: 24px; }
+    .two-col, .comparison { grid-template-columns: 1fr; gap: 16px; }
+    .cards { grid-template-columns: 1fr; gap: 14px; }
+    .card { padding: 18px; border-radius: 12px; }
+    .card li { font-size: 15px; }
+    .hero-icon { font-size: 56px; margin-bottom: 10px; }
+    .col-title { font-size: 22px; }
+    .diagram { gap: 8px; padding: 18px 14px; }
+    .node {
+      padding: 10px 14px;
+      font-size: 14px;
+      min-width: 0;
+    }
+    .arrow { font-size: 18px; }
+    pre { font-size: 13px; padding: 14px 14px; border-radius: 8px; }
+    .tag-list { gap: 6px; }
+    .tag { padding: 5px 10px; font-size: 13px; }
+    .badge { font-size: 13px; padding: 3px 10px; }
+  }
+
+  @media (max-width: 520px) {
+    h1 { font-size: 28px; }
+    h2 { font-size: 22px; margin-bottom: 16px; }
+    h2::before { height: 22px; }
+    h3 { font-size: 17px; }
+    p, li { font-size: 15px; }
+    .subtitle { font-size: 15px; margin-bottom: 18px; }
+    .hero-icon { font-size: 44px; }
+    .col-title { font-size: 19px; }
+    .node { padding: 8px 12px; font-size: 13px; border-radius: 10px; }
+    .arrow { font-size: 16px; }
+    pre { font-size: 12px; padding: 12px; }
+    code { word-break: break-word; }
   }
 
 </style>
@@ -261,7 +297,7 @@
 </script>
 </head>
 <body>
-  <div class="hint">← → 키 또는 Space 로 이동</div>
+  <div class="hint" data-touch-hint="← → 스와이프 · 하단 버튼"><span>← → 키 또는 Space 로 이동</span></div>
 
   <div class="deck" id="deck">
 

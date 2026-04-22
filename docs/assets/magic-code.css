@@ -13,6 +13,7 @@
   margin-top: 14px;
   scroll-margin-bottom: 140px;
   scroll-margin-top: 40px;
+  max-width: 100%;
 }
 
 .magic-code .shiki-magic-move-container {
@@ -25,8 +26,12 @@
   font-size: 15px;
   line-height: 1.6;
   white-space: pre;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   position: relative;
+  max-width: 100%;
 }
 
 .magic-code .code-steps-nav {
@@ -52,4 +57,32 @@
   font-variant-numeric: tabular-nums;
   min-width: 28px;
   text-align: center;
+}
+
+@media (max-width: 900px) {
+  .magic-code {
+    padding: 14px 14px 42px;
+    scroll-margin-bottom: 120px;
+  }
+  .magic-code .shiki-magic-move-container {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .magic-code .code-steps-nav {
+    right: 10px;
+    bottom: 8px;
+    padding: 3px 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .magic-code {
+    padding: 12px 12px 40px;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+  .magic-code .shiki-magic-move-container {
+    font-size: 12px;
+    line-height: 1.5;
+  }
 }

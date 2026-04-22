@@ -8,6 +8,7 @@
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -23,6 +24,8 @@
   transition: opacity 0.4s ease, transform 0.4s ease;
   pointer-events: none;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .slide.active {
@@ -37,7 +40,7 @@
 
 .nav {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -49,6 +52,9 @@
   border-radius: 999px;
   border: 1px solid var(--surface-2);
   z-index: 100;
+  max-width: calc(100vw - 24px);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .nav button {
@@ -64,6 +70,8 @@
   align-items: center;
   justify-content: center;
   transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .nav button:hover:not(:disabled) {
@@ -86,6 +94,8 @@
   align-items: center;
   justify-content: center;
   transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .nav .nav-home:hover {
@@ -104,6 +114,8 @@
   background: var(--surface-2);
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .dot.active {
@@ -121,8 +133,8 @@
 
 .hint {
   position: fixed;
-  top: 24px;
-  right: 28px;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  right: 20px;
   z-index: 100;
   color: var(--muted);
   font-size: 13px;
@@ -130,8 +142,33 @@
   padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid var(--surface-2);
+  pointer-events: none;
+}
+
+/* Touch devices don't have arrow keys — swap the hint for a swipe/tap cue. */
+@media (hover: none) and (pointer: coarse) {
+  .hint[data-touch-hint]::before { content: attr(data-touch-hint); }
+  .hint[data-touch-hint] > * { display: none; }
 }
 
 @media (max-width: 900px) {
-  .slide { padding: 40px 28px; }
+  .slide { padding: 48px 24px 104px; }
+  .nav { gap: 10px; padding: 8px 14px; }
+  .nav button,
+  .nav .nav-home { width: 40px; height: 40px; font-size: 22px; }
+  .nav .nav-home { font-size: 18px; }
+  .dots { gap: 6px; }
+  .dot { width: 7px; height: 7px; }
+  .counter { font-size: 13px; min-width: 36px; }
+  .hint { top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; font-size: 12px; padding: 5px 11px; }
+}
+
+@media (max-width: 520px) {
+  .slide { padding: 40px 18px 96px; }
+  .nav { gap: 8px; padding: 6px 10px; }
+  .nav button,
+  .nav .nav-home { width: 38px; height: 38px; }
+  /* Many dots can't fit on narrow screens — hide them; the counter still shows position. */
+  .dots { display: none; }
+  .counter { min-width: 44px; font-size: 13px; }
 }
