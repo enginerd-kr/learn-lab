@@ -42,7 +42,7 @@
     padding: 64px 80px 120px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: safe center;
     opacity: 0;
     transform: translateX(40px);
     transition: opacity 0.4s ease, transform 0.4s ease;
@@ -365,6 +365,8 @@
     border-radius: 10px;
     padding: 18px 20px 46px;
     margin-top: 14px;
+    scroll-margin-bottom: 140px;
+    scroll-margin-top: 40px;
   }
   .magic-code .shiki-magic-move-container {
     background: transparent !important;
@@ -1700,6 +1702,13 @@ graph.invoke({"question": "서울 날씨 알려줘"})</template>
     counter.textContent = `${current + 1} / ${slides.length}`;
     prevBtn.disabled = current === 0;
     nextBtn.disabled = current === slides.length - 1;
+    slides.forEach(s => { s.scrollTop = 0; });
+    const target = slides[current];
+    requestAnimationFrame(() => {
+      target.scrollTop = 0;
+      requestAnimationFrame(() => { target.scrollTop = 0; });
+    });
+    setTimeout(() => { target.scrollTop = 0; }, 500);
   }
 
   prevBtn.addEventListener('click', () => goTo(current - 1));
@@ -1761,15 +1770,16 @@ graph.invoke({"question": "서울 날씨 알려줘"})</template>
       );
       let idx = 0;
 
-      function render(i) {
+      function render(i, animated = true) {
         const { current } = machine.commit(steps[i]);
         renderer.render(current);
         counter.textContent = `${i + 1} / ${steps.length}`;
         prevBtn.disabled = i === 0;
         nextBtn.disabled = i === steps.length - 1;
+        if (animated) container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      render(0);
+      render(0, false);
 
       const stepper = {
         next: () => { if (idx < steps.length - 1) { idx++; render(idx); return true; } return false; },
